@@ -1,19 +1,28 @@
 project:
   type: website
+  output-dir: docs
+
+
+render:
+      - index.qmd
+      - Cours.qmd
+      - Appli1_bouake.qmd
+      - Appli2_access.qmd
+
 
 website:
-  title: "quarto-website"
+  title: "Distances et accessibilité"
   navbar:
     left:
-      - href: index.qmd
-        text: Home
-      - about.qmd
+      - Cours.qmd
+      - Appli1_bouake.qmd
+      - Appli2_access.qmd
 
+      
 format:
   html:
     theme: cosmo
     css: styles.css
     toc: true
-
-
+    embed-resources: true
 

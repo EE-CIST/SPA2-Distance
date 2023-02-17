@@ -1,0 +1,957 @@
+---
+title: "Cours : Distance et Accessibilité"
+author: BAMBA Vakaramoko & GRASLAND Claude
+---
+
+## Introduction
+
+L'objectif de ce cours est de familiariser les étudiants avec deux
+notions centrales en géographie et en analyse spatiale :
+
+### Définition de la distance
+
+C'est l'intervalle entre deux points. La distance est une relation entre les lieux dans l'espace géométrique donné. Définir une distance est un acte profondément géographique, qui revient à définir la nature de la relation entre les lieux, l'espace de référence et donc le nombre de ses dimensions (Brunet et al, 1994).
+
+Exemple : la distance métrique, topologique, social, perçue
+
+La distance change selon le mode de transport utilisé. Si par exemple on veut se rendre du village de Forossou au village de Fouélessi en voiture par la route, il faudra compter de 192 à 215 km et un temps supérieur à 4h. Mais si on se déplace en hélicoptère, il ne faudra que quelques minutes puisque la distance à vol d'oiseau est de moins de 20 km. On pourrait aussi imaginer de se déplacer à pieds puis en vélo, etc
+(*Figure 1*)
+
+=\> La distance ne se mesure donc pas dans l'absolu mais en fonction
+d'un moyen de transport qui va impliquer des contraintes différentes.
+
+![](img/media/image3.png){width="3.4027777777777777in"
+height="3.066666666666667in"}
+
+Figure 1 : La distance routière entre Forossou et Ouélessi
+
+On peut mesurer les distances de façons très différentes
+
+\- kilomètres
+\- temps
+\- coût
+\- énergie
+\- sécurité
+\- pénibilité / agrément
+\- etc. 
+
+=\> La distance ne se mesure pas seulement en kilomètres ! Le fait de choisir un itinéraire plutôt qu'un autre dépend d'un grand nombre de facteurs. Les économistes font l'hypothèse qu'on peut définir un **coût généralisé** qui intègre toutes les dimensions précédentes mais il n'est pas facile de le mesurer de façon objective.
+
+### Définition de l'accessibilité
+
+C'est la capacité à être atteint par une clientèle, un message, un
+service.Elle dépend de l'état des moyens de transport et représente un coût.
+C'est l'ensemble de possibilités effectives pour relier deux lieux par un déplacement ou pour accéder à un service. L'accessibilité est une composante de la mobilité. Elle représentel'offre de mobilité.
+
+Exemple : accessibilité à internet, la téléphonie mobile...
+
+### Première loi de la géographie
+
+Il n'est pas exagéré de dire que si la distance n'exerçait aucune
+influence sur la vie des sociétés, la géographie n'existerait pas car elle serait inutile. Tous les manuels théoriques de géographie
+quantitative et d'analyse spatiale débutent logiquement par une
+réflexion sur la distance (Beguin 1979 ; Taylor, 1977) L'auteur le plus célèbre en la matière est le géographe américain Waldo Tobler qui a
+défini ainsi la première loi de la géographie :
+
+\"*Everything is related to everything else, but nearthings are more
+related than distant things*. [^1]» (Tobler, 1970)
+
+Cette première loi de la géographie demeure évidemment trop vague tant que l'on n'a pas défini ce que sont des lieux proches ou éloignés, ce qui fait l'objet précisément de la première partie ce cours sur la mesure du distance. Une fois que l'on saura mesurer la distance non plus entre deux lieux mais entre plusieurs lieux à l'aide d'une matrice de distance, on pourra passer à la seconde notion centrale qui est l'accessibilité.
+
+## A. Approche empirique de la distance
+
+Plutôt que d'aborder immédiatement cette question de façon théorique, nous allons partir d'un exemple très concret, celui de l'alimentation en produits agricoles du marché de gros de Bouaké (Côte d'Ivoire) en nous appuyant sur les relevés de terrain effectués à l'occasion de la thèse de doctorat de Bamba Vakaramoko (Bamba, 2019).
+
+### A.1 Le marché de gros de Bouaké
+
+#### Présentation du marché de gros de Bouaké
+
+Situé au cœur de la Côte d\'Ivoire, dans la région de Bouaké, à 379 km au Nord d\'Abidjan, sur la voie internationale A3 menant au Mali et Burkina Faso. Le marché de Gros de Bouaké est une plateforme de
+commercialisation des produits vivriers, unique en son genre dans la
+sous région ouest-africaine. Il est perçu comme un puissant instrument d\'intégration économique en raison de sa situation géographique. Ce marché a une capacité d'accueil de 431 magasins dont 370 sont entièrement dédiés au vivrier. Il a été inauguré le 16 Avril 1998. C'est un marché bâti sur une superficie de 27 hectares.
+
+![D:\\projet-\[Converti\].jpg](img/media/image1.jpeg){width="6.295833333333333in"
+height="4.430555555555555in"}
+
+#### Présentation des acteurs
+
+On rencontre 2 types d'acteurs au marché de gros de Bouaké : Les acteurs étatiques et les acteurs non étatiques.
+
+1.  **Les acteurs étatiques**
+
+-   **[L'ocpv]{.underline}** :  C'est l'office d'aide à la commercialisation des produits vivriers. C'est un établissement public national à caractère administratif, sous tutelle technique du ministère du commerce et celui de l'économie et des finances. Il a pour mission d'apporter une aide multiforme aux opérateurs en vue d'une amélioration de la distribution et de la commercialisation des produits vivriers. La distribution est réservée à l'initiative privée selon l'article 4 du décret N°2012-961 du 2 octobre 2012.
+
+-   **[La douane ]{.underline}** : C'est un acteur clé de l'importation et de l'exportation des produitsvivriers. Le marché de gros de Bouaké abrite un bureau annexe des douanes. Cette cellule est chargée de suivre les chargements et les déchargements des véhicules. Ce bureau est compétent pour l'enregistrement et le suivi de toutes les opérations d'exportation de marchandises. Il s'occupe de l'effectivité des exportations. Il est chargé du traitement des déclarations en détail des denrées du cru périssable. Il vérifie la conformité des chargements des marchandises. La plateforme a un caractère national et international parce que le marché de gros reçoit et envoie les produits vivriers à l'intérieur du pays et dans les pays de la sous-région. Deux types de déclaration ont lieu au marché de gros. Ce sont la déclaration d'exportation des marchandises prises sur le marché intérieur (D6) et la déclaration de mise à la consommation directe de marchandises (D3).
+
+2-**Les acteurs non étatiques**
+
+-   **[Les commerçants]{.underline}** : Ils sont régis par les articles 10 et 11 du décret N°99-445 du 7 juillet 1999. Ce décret stipule que ces commerçants sont des professionnels admis au marché de gros par une commission présidée par le préfet. Ils doivent vendre en gros.
+
+-   **[Les transporteurs ]{.underline}**: Ils interviennent comme des prestataires de services. Ils assurent le transport des marchandises des zones de production vers les grands centres urbains et les marchés de la sous région.
+
+-   **[Les syndicats ]{.underline}**: Ils veillent à la bonne distribution du fret entre les transporteurs. C'est un rôle d'intermédiation entre les opérateurs et les autorités.
+
+-   **[Les coxers :]{.underline}**: Ce sont des intermédiaires entre transporteurs et commerçants. Les coxers sont le plus souvent sollicités en période de récolte. Cette période correspond à une forte demande de véhicule, ce qui implique l'augmentation des coûts de transport. Une commission variable de 5 à 10% du prix du transport est remise au coxer selon la quantité de la marchandise et la distance.
+
+####  Explication du rôle de la distance (prix, temps, ...)
+
+Au marché de gros, le tarif varie du transport en fonction de ladistance, mais également en fonction de la situation géographique du lieu d'approvisionnement, du tonnage du véhicule et surtout en fonction de la période de l'année.
+
+Le ravitaillement du marché de gros de Bouaké connaît des contraintes aucniveau de l'acheminement et de la redistribution des produits vivriers.L'analyse de toutes ces données indique que le réseau routier rural necbénéficie pas des ressources du Fonds d'Entretien Routier (FER) alorscqu'il est la première voie de transit des produits en direction du marché de gros. Les budgets disponibles pour l'entretien routier et sa remise en état sont actuellement insuffisants.
+
+##### **Exemple 1 : le phénomène de racket** 
+
+Le phénomène de racket s'illustre de diverses manières et varie en
+fonction de l'auteur, de la victime, du produit vivrier et de l'axe
+routier. A tous ces problèmes infrastructurels et structurels, se
+greffent les augmentations des prix du gasoil qui occasionnent la
+flambée des prix du transport et par ricochet celui des denrées
+alimentaires sur les marchés urbains.
+
+ ![Exemple](img/media/image2.png){width="4.182638888888889in"
+height="1.8722222222222222in"}
+
+Le racket, selon les transporteurs et commerçants enquêtés, constitue la première contrainte lors du ravitaillement du marché de gros de Bouaké soit 81,86 % sur un ensemble de 6 facteurs. Il est donc l'entrave majeure à la fluidité du commerce du vivrier en direction du marché de gros de Bouaké. Ces contraintes s'imposent aussi bien aux transporteurs qu'aux commerçants. Le transporteur paye les faux frais lors des contrôles à la police et à la gendarmerie. Quant aux commerçants, ils règlent ces frais aux agents de la douane et ceux des eaux et forêts 
+
+La figure montre que plus de 80 % des enquêtés estiment être victime de racket de la part des agents de la gendarmerie et de la police. Ces prélèvements illicites constituent pour les usagers du marché une entrave à son ravitaillement. L'irrégularité des pièces afférentes aux véhicules, la surcharge, les factures manquantes favorisent le racket.
+
+#####  **Exemple 2 : Le transport de l'oignon du Niger**
+
+Le transport de l'oignon subit le même sort avec de nombreux postes de contrôle rencontrés depuis la zone de production au Niger jusqu'au marché de gros. Ainsi, le prix de revient d'un sac d'oignon de 120 kg au marché de gros est estimé à 21 000 F CFA.
+
+**Tableau 1 :** Prix de revient d'un sac d'oignon 
+
+  -----------------------------------------------------------------------
+  Prix bord champ d'un sac de 120 kg  10 000 F CFA
+  ----------------------------------- -----------------------------------
+  Frais de route d'un sac de 120 kg   4 000 F CFA
+
+  Transport d'un sac de 120 kg        7 000 F CFA
+
+  Total                               21 000 F CFA
+  -----------------------------------------------------------------------
+
+Source : Bamba V., 2015 et 2016.
+
+Après le chargement de l'oignon, les camions effectuent le dédouanement. Ils établissent un certificat de contrôle phytosanitaire au poste frontalier Niger-Burkina de Torodi et procèdent aux paiements des droits de transit. Après l'acquisition de ces documents, les transporteurs sont contraints de payer des frais de route à chaque poste de contrôle des douanes, de la gendarmerie ou de la police tout au long du trajet. Une tarification tacite existe entre les opérateurs et les forces de l'ordre. Les frais de route de chaque camion et à chaque poste sont fixés comme suit : 5000 F CFA par poste de douanes au Niger à l'exception des postes de Niamey, de Torodi (frontière Burkina Faso) où les frais sont de 10 000 F CFA. Ce montant de 5000 F CFA est doublé à la sortie des frontières nigériennes jusqu'à destination pour un véhicule immatriculé au Niger. Ces frais peuvent être quelquefois en nature, un sac d'oignon par exemple. Ils sont payés pour éviter un déchargement du camion aux différents postes de contrôle de douane pour vérification de la conformité douanière. Cette vérification qui pourrait être une menace pour les produits, contraint les commerçants à la recherche d'un compromis d'autant plus que l'oignon est une marchandise très périssable. En ce qui concerne la gendarmerie et la police, les frais prélevés sont de l'ordre de 1000 F CFA au Niger et entre 2000 F CFA et 3000 F CFA dans les postes des pays traversés. Les montants des frais de route sont remis au départ au chauffeur par l'exportateur. Il est d'environ 4 000 F CFA par sac d'oignon. Le chargement d'un camion est de 350 sacs de 100 à 120 kg. Cette dépense liée au frais de route pourrait avoisiner 1 400 000 FCFA selon les commerçants par chargement.
+
+####  **Exemple 3 : La problématique des barrages routiers**
+
+Le racket se matérialise aussi par une augmentation des barrages sur les principaux axes de ravitaillement du marché de gros de Bouaké. L'analyse du tableau 4 montre un nombre pléthorique de barrages sur les principales voies d'accès du marché alors que la norme CEDEAO admet 3 barrages sur 100 km. Les relations que ces agents ont avec les commerçants influent sur bien des aspects de la commercialisation des denrées alimentaires (durée de voyage, qualité et prix de vente sur le marché). Le calcul des coûts réels de commercialisation des produits vivriers entre les zones de production et le marché de gros doit prendre en compte non seulement les frais de location de véhicules, les diverses transactions sur les marchés de brousse, mais également les charges fiscales légales et illégales que doivent supporter les transporteurs
+
+**Tableau 2** : Nombre de barrages sur les principaux axes alimentant le marché de gros de Bouaké.
+
+  --------------------------------------------------------------------------
+  Localités             Distance    Nombre de         Densités des barrages
+                                    barrages          aux 100 km
+  --------------------- ----------- ----------------- ----------------------
+  Bouaké-Béoumi         53          8                 15
+
+  Bouaké-Sakassou       33          7                 21
+
+  Bouaké-M'bahiakro     80          8                 10
+
+  Bouaké-Brobo          20          4                 20
+
+  Bouaké-Diabo          20          3                 15
+
+  Bouaké-Dabakala       135         13                9
+
+  Bouaké-Katiola        45          7                 15
+
+  Bouaké-Botro          32          7                 21
+
+  Bouaké-Marabadiassa   65          11                16
+
+  Bouaké-Tiéningboué    101         14                13
+
+  Bouaké-Mankono        172         16                9
+  --------------------------------------------------------------------------
+
+Source : Bamba V., 2015 et 2016.
+
+Les négociations et les marchandages portent éventuellement non pas sur l'authenticité ou la régularité des pièces de véhicule, moins encore sur la qualité, l'origine ou la destination du produit, mais sur la somme à payer. Le commerçant et le transporteur savent qu'ils ont intérêt à jouer le jeu pour gagner en temps et en argent, surtout qu'il s'agit de produits périssables. Le montant de ces faux frais dépend du type de véhicule et surtout de leur capacité de charge. Ce montant est estimé à 16 000 F CFA sur l'axe Béoumi-Bouaké distant de 53 km pour un véhicule pick up. Sur ce tronçon, on dénombre 8 barrages ce qui fait un ratio d'un barrage tous les 6,62 km. Dabakala (2 103,170 tonnes), Tiéningboué (2600,327 tonnes) et Mankono (338,230 tonnes) sont les villes où on dénombre le plus de barrages.
+
+
+### A.2 L'exemple de l'igname
+
+
+En Côte d'Ivoire, les ignames étaient cultivées essentiellement pour la consommation. L'igname est un produit périssable dont la conservation est limitée dans le temps, allant de quelques semaines à trois mois au maximum. Cela demande un rythme de rotation rapide des produits, du champ vers le consommateur. Ainsi plusieurs moyens de transport sont mis à contribution pour éviter des avaries dans la chaîne de ravitaillement. Les modes de transport qui interviennent dans cette filière partent des moyens non motorisés aux véhicules motorisés.
+
+
+#### Transport et distance
+
+L'acheminement de l'igname des champs vers les points de rassemblement est assuré par les transports non motorisés. Avant l'embarquement pour le marché de gros, l'igname est stockée dans un endroit accessible aux véhicules. Ce premier regroupement est fait par les transports non motorisés (homme, brouette, pousse-pousse) et les transports de petits gabarits. Ces véhicules utilisés ne sont pas toujours adaptés au transport de l'igname et occasionnent parfois des dommages au cours du transport. L'évacuation de l'igname exige donc plusieurs moyens de transport dans la chaîne. Ici s'opère la première rupture de charge.
+
+Après la constitution du stock souhaité dans le lieu de rassemblement, le producteur ou le commerçant fait appel à un camionneur pour l'évacuation du produit. Le prix du trajet est discuté en fonction de la distance (tableau3).
+
+**Tableau 3** : Distance kilométrique des zones de production et de
+réexpédition de l'igname
+
+  -----------------------------------------------------------------------
+  Localité                          Distance kilométrique
+  --------------------------------- -------------------------------------
+  Région de Bouaké                  1kg à 10 F CFA
+
+  Dabakala                          1kg à 20 F CFA
+
+  Kong                              1kg à 20-30 F CFA
+
+  Abidjan                           1kg à 10-15 F CFA
+
+  Mali                              1kg à 30-35 F CFA
+
+  Bouna, Bondoukou                  1kg à 35-40 F CFA
+  -----------------------------------------------------------------------
+
+Source : Bamba V., 2016.
+
+Les transporteurs interviennent comme des prestataires de services. Ils sont propriétaires ou locataires des camions. A ce titre, ils assurent un service de transport. Par ailleurs, ils peuvent être impliqués dans des opérations d'achat et de revente d'ignames. Pour la location du véhicule, le tarif varie en fonction de la distance, mais également en fonction de la situation géographique du lieu d'approvisionnement, du tonnage du véhicule et surtout en fonction de la période de l'année. Suivant les entretiens réalisés auprès des transporteurs, il y a une variation saisonnière des prix unitaires pratiqués. Le réseau, surtout en milieu rural, devenant moins praticable, le transport est en saison des pluies plus difficile, il est donc plus coûteux.
+
+**Tableau 4** : Couronne d'approvisionnement du marché de gros de Bouaké
+
+  --------------------------------------------------------------------------
+  Distance de    Nombre de      Pourcentage de Quantité       Pourcentage
+  provenance     véhicule       véhicules (%)  d'ignames en   d'ignames (%)
+                                               tonne          
+  -------------- -------------- -------------- -------------- --------------
+  Couronne       46             9,35           643,54         17,28
+  locale (0 à 50                                              
+  km)                                                         
+
+  Couronne       447            90,65          3079,40        82,72
+  nationale                                                   
+  (plus de 50                                                 
+  km)                                                         
+
+  Total          493            100            3722,94        100
+  --------------------------------------------------------------------------
+
+Source : MGB, 2016.
+
+Le tableau permet de localiser les deux couronnes d'approvisionnement. La couronne locale est la première zone de ravitaillement du marché. C'est la ville de Bouaké et sa région proche. Elle correspond au périmètre de protection institué par l'article 2 du décret N°99-446 du 7 juillet 1999 (JO N°30 du 29 juillet 1999) dont les limites englobent la totalité du département de Bouaké qui correspond aujourd'hui à la région Gbèkè. Cette région est située dans un rayon de 50 km correspondant au périmètre de protection du marché. Sur ces petites distances interviennent les petits gabarits. Les moyens de transport qui alimentent ce périmètre sont les deux roues, les tricycles, les véhicules de transport de personnes (les taxis brousse, les gbaka) et les bâchés. Ils ont une charge qui varie entre 3 à 8 tonnes. Cette couronne locale a ravitaillé le marché de gros du 20 juin 2013 au 31 mai 2015 dans les proportions de 643,54 tonnes d'ignames. Ces localités du périmètre de protection fournissent faiblement le marché de gros soit
+17,28 %.
+
+La couronne nationale correspond aux autres zones d'approvisionnement nationales. Pour atteindre ses zones de production, le choix d'un moyen de transport dépend de 3 éléments. Le premier est la quantité d'ignames disponible dans la zone de production, l'accessibilité de la zone de production et enfin la distance à parcourir.
+
+Dans le cas d'une grande quantité et de l'éloignement de la zone de production, les trois facteurs sont déterminants. Ainsi le tonnage détermine le type de moyens de transport. Pour les longues distances, le commerçant utilise les gros porteurs comme les remorques de 40 t. On note que l'essentiel de l'igname du marché de gros provient de la couronne nationale soit 82,72% (Nos enquêtes, 2015), ce qui demande des moyens de transport de plus en plus volumineux à cause de la distance. Le marché de gros a été approvisionné du 20 juin 2013 au 31 mai 2015 par les localités suivantes : Bondoukou, Bouandougou, Bouna, Kong, Tiéningboué. Elles ont fourni plus de 500t d'ignames chacune. La ville de Dabakala a été le premier fournisseur du marché de gros avec 1710,930t. Ensuite, arrive Bouandougou avec 1704,620t et Tiéningboué avec 1370,940t.
+
+#### Côut de transport
+
+La distance et l'accessibilité sont primordiales dans le coût du
+transport. Lorsque la production est dans une zone reculée, il y a un renchérissement du coût du transport. C'est l'exemple de Bouna et de Bondoukou qui fournissent l'igname précoce (kponan). La tonne d'igname coûte entre 35 000 F.CFA et 40 000 F.CFA. L'accessibilité de ces zones de production d'avec le marché se fait par une route non bitumée alors que les distances sont de 321 km pour Bondoukou et de 383 km pour Bouna. Pour à peu près la même distance entre Abidjan et Bouaké (349 km), le transport de la tonne d'igname se négocie entre 10 000 F.CFA et 15 000 F.CFA. Ainsi les infrastructures routières sont un facteur déterminant dans le coût du transport et à la fois indispensable pour évacuer les flux d'ignames. La dispersion des campements et leurs accès rendent la collecte de l'igname difficile pour les transporteurs. Ces voies empruntées se définissent par leur impraticabilité surtout en période de pluie. Les tracasseries routières et les rackets sont des entraves à la fluidité du commerce de l'igname. En effet, ces contraintes se traduisent tant chez le transporteur que chez le commerçant. Le transporteur s'occupe des « pots de vin » concernant son véhicule c'est-à-dire de tous les agents chargés du contrôle en l'occurrence la police et la gendarmerie. Quant aux commerçants, ils s'occupent de ceux commis au contrôle des marchandises à savoir les eaux et forêt et la douane. Le président de la filière igname affirme que le nombre de barrages n'est plus respecté lorsqu'on quitte l'autoroute du nord et que le racket impacte le prix final de l'igname. Il fait noter par exemple que pour un chargement d'ignames de Bondoukou à Bouaké, l'enveloppe allouée au racket peut atteindre 100 000 F CFA voire plus. Nous avons vérifié ces propos en nous rendant à Diabo, commune située à 20 km de Bouaké pour un dépotage. Nous avons dénombré 3 barrages à savoir celui de la gendarmerie, des eaux et forêt et de la police. A ces postes, les véhicules de marchandises sont soumis à un péage informel qui varie de 500 F CFA à 2000 F CFA selon la quantité de chargement.
+
+#### Echanges nationaux et internationaux
+
+Le transport de l'igname vers les grands centres urbains et les marchés de la sous-région demande des moyens de transport et des infrastructures adéquates. Les moyens de transports pour la redistribution sont les mêmes que dans l'approvisionnement à savoir les gros camions, les camions, les pickups, les tricycles et les voitures de transport en commun.
+
+**Tableau 5** : Véhicule sortie du marché de gros
+
+  -----------------------------------------------------------------------
+  Espace            Nombre de         Pourcentage de    Type de véhicule
+  géographique      véhicules         véhicules (%)     transportant
+                                                        l'igname
+  ----------------- ----------------- ----------------- -----------------
+  Localité          18                32,14             Camion, gros
+  nationale                                             camion,
+                                                        tricycles,
+                                                        pickup, voiture
+                                                        de transport
+
+  Mali              38                67,86             Camion, gros
+                                                        camion
+
+  Total             56                100               
+  -----------------------------------------------------------------------
+
+Source : MGB, 2016.
+
+Les flux d'ignames réceptionnés par le marché de gros sont redistribués à travers le pays et à l'extérieur à l'aide de divers moyens de transport. L'analyse du tableau montre qu'au niveau de la sous-région seul le Mali reçoit les ignames du marché de gros. C'est la destination privilégiée de l'igname du marché de gros de Bouaké avec 80 % du total commercialisé. L'application de la circulaire N° 932 du 16/3/1999 de la direction générale de la douane relative au dédouanement des produits du cru à partir du marché de gros est la raison explicative de l'importance du marché malien dans cette filière. La circulaire impose que soit dédouané un certain nombre de produits sur le site du marché de gros, notamment la banane plantain et la noix de cola en direction du Mali, du Niger, du Burkina Faso et du Sénégal. Cette décision est modifiée par la circulaire N° 1673 du 3/9/2013 qui étend son champ d'application à d'autres produits alimentaires d'origine agricole. L'igname fait partie de ces produits conformément au décret N° 99-446 du 7 juillet 1999. Ainsi, les formalités de dédouanement de l'igname se font uniquement au marché de gros et non ailleurs. Cette décision s'applique aux produits susmentionnés issus du périmètre de protection du marché. La présente circulaire renforce la compétitivité du marché mais son application intégrale reste marginale au regard des statistiques du marché de gros.
+
+Les moyens de transport utilisés dans la redistribution vers le Mali sont les gros porteurs à savoir les gros camions et les camions (photo). Leur charge unitaire facilite l'exportation de grandes quantités. Le coût du transport d'une tonne d'ignames pour le Mali coûte entre 30 000 F CFA et 35 000 F CFA. Ce tarif est souvent le fait des camionneurs maliens en transit au port d'Abidjan et qui prennent du fret retour.
+
+Seulement 20% des ignames du marché de gros sont redistribuées sur les marchés nationaux. Les villes d'Abidjan et de San Pédro sont les principales destinations. Abidjan est la deuxième destination de l'igname du marché de gros avec 12 % après le Mali. Les variétés les plus demandées sont le klinglè (370,840t), l'assawa (219,680t), le bêtê bêtê (214,360t) et le kponan (158,600t). San Pédro vient en troisième position avec 3%. Les 5% restants sont repartis entre les autres marchés nationaux.
+
+Le marché de gros entretient également des échanges avec les marchés de la ville de Bouaké. 65,64t d'ignames sont redistribuées localement dans ces marchés. Les variétés les plus demandées sont le klinglé et le kponan. Les détaillantes se procurent l'igname auprès des grossistes qu'elles vendent directement aux consommateurs finaux. Ce sont en majorité des femmes possédant généralement un emplacement fixe sur les marchés de la ville. Elles revendent les tubercules par tas de 3 ou 4 ignames. Elles utilisent plusieurs moyens de transport selon la distance du lieu de vente et de la quantité achetée. On a les transports non motorisés : le portage, les wotro et les brouettes. Au marché de Bromakoté, du fait de sa proximité avec le marché de gros, les femmes exploitent plutôt les transports non motorisés à savoir les brouettes et les wotro. Pour le ravitaillement des autres marchés, le transport est multimodal : d'abord le portage ou le wotro ou la brouette jusqu'aux abords du marché et ensuite les transports motorisés comme les taxis-villes et les tricycles.
+
+## B. Approche théorique de la distance
+
+Comme on a pu le voir dans la partie précédente, les distances réelles sont des mesures complexes qui font intervenir un grand nombre de facteurs et nécessitent une très bonne connaissance du terrain d\'étude. On peut toutefois utiliser dans certains cas des **approximations** des distances réelles en utilisant des formules mathématiques ou des applications interactives de calcul disponibles sur des serveurs webs. Les résultats sont évidememnt moins précis et moins détaillés mais ils permettent de fournir des résultats sur l\'ensemble des lieux présents
+sur un territoire.
+
+### B.1 Les distances mathématiques
+
+Même si elles sont évidemment plus abstraites, les **distances mathématiques** sont souvent utilisées pour donner des approximations des distances empiriques. Leur avantage est qu'elles ne dépendent que des coordonnées des points et peuvent être calculées rapidement pour un très grand nombre de distances à l'aide d'un ordinateur.
+
+#### B.1.1 La distance orthodomique
+
+La distance orthodromique aussi appelée « distance du grand cercle » correspond au déplacement entre deux points de la surface de la Terre qui est comme chacun le sait une sphère applatie. Sa formule est donc assez complexe et elle dépend du choix d\'un ellipsoïde de référence. Une version simplifiée peut en être donnée comme suit :
+
+Soit deux points i et j de la surface du globe ayant pour latitudes respectives $\left( \delta_{i},\delta_{j} \right)$ et pour longitudes respectives $\left( \lambda_{i},\lambda_{j} \right)$, la distance orthodromique entre ces deux points peut-être approximativement estimée par la **formule de Haversine** qui mesure la distance à la surface d\'un cercle parfait de rayon R :
+
+$D_{ij} ≈ R.arccos(sin(\delta_i).sin(\delta_j)+cos(\delta_i).cos(\delta_j).cos(\lambda_i-\lambda_j))$
+
+Si on prend l\'exemple de *Paris* (2.34°W, 48.85° N,) et *Cotonou*
+(2.41°W, 6.36°N) et que l\'on fixe le rayon moyen de la terre à 6371 km le calcul nous donne :
+
+$D_ij ≈ 6371.arccos(sin(48.85).sin(6.36)+cos(48.85).cos(6.36).cos(2.41-2.34)) ≈ 5812km$
+Cette formule peut être utilisée dans un tableur de type Excel. Mais il est plus facile et surtout plus juste de calculer la distance orthodromique l\'aide d\'un SIG comme QGIS. On peut également facilement calculer cette distance dans R à l\'aide de la fonction *st_distance()* du package **sf** (*spatial features*).
+
+#### B.1.2 La distance euclidienne
+
+Dès lors que l\'on travaille sur une portion suffisamment petite de la surface terrestre (disons de moins de 1000 x 1000 km), on peut négliger la rotondité de la Terre et calculer avec une approximation raisonnable les distances à partir de **coordonnées projetées**, c\'est-à-dire ramenées dans un **plan orthonormé** ou deux points *i* et *j* ont pour coordonnées $\left( X_{i},Y_{i} \right)$ et $\left( X_{j},Y_{j} \right)$. On peut alors calculer la distance entre deux points à l\'aide de lamétrique euclidienne dont la formule de calcul (dérivée du théorème de Pythagore) est  :
+
+$D_{ij}=\sqrt{(X_i-X_j)^2+(Y_i-Y_j)^2}$
+
+[Exemple :]{.underline} Supposons que l\'on veuille calculer la distance entre **Abidjan** et **Bouaké** qui ont pour coordonnées respectives de latitude et longitude :
+
+-   Abidjan : Longitude = 4.020° W , Latitude = 5.324°N
+
+-   Bouaké : Longitude = 5.050°W, Latitude = 7.698° N
+
+Après application d\'une projection qui minimise les déformations en Côte d\'Ivoire (EPSG = 2043) les nouvelles coordonnées planaires mesurées en kilomètres sont devenues :
+
+-   Abidjan : X = 1052, Y = 590
+
+-   Bouaké : X = 936, Y = 852
+
+On peut dès lors estimer la distance entre les deux villes par la formule
+
+$D_{ij}=\sqrt{(1052-936)^2+(590-852)^2} = \sqrt{(116)^2+(-262)^2} = \sqrt{82100} ≈ 287{km}$ 
+
+On pourra vérifier à l\'aide d\'un SIG ou de Google Maps que cette approximation est très proche de la distance qui serait obtenue en utilisant la distance à la surface de la Terre en tenant compte des déformations de l\'ellipsoïde.
+
+#### B.1.3 La distance rectilinéaire 
+
+La distance rectilinéaire aussi appelée *distance city-block* ou *distance de Manhattan* est une métrique particulière adaptée au cas des villes ayant un réseau de transport organisé selon deux directions orthogonales. Nous proposons de la rebabptiser ici **distance de Cotonou** dans la mesure où le centre de cette métropole offre un exemple presque parfait de plan en damier où toutes les rues sont de direction Nord-Sud ou Sud-Nord. Supposons par exemple qu\'un élève de l\'école primaire de Kowegbo veuille retrouver un autre élève de l\'école primaire d\'Avotrou. Quel itinéraire va-t-il choisir s\'il se déplace à pieds et veut prendre l\'i**tinéraire le plus rapide** ?
+
+
+![**Solution n°1:** 1.6 km / 22 minutes ](img/media/image4.png)
+
+
+![**Solution n°2:** 1.6 km / 22 minutes ](img/media/image5.png)
+
+
+![**Solution n°3:** 1.6 km / 22 minutes ](img/media/image6.png)
+
+
+
+![**Solution n°4:** 1.7 km / 23 minutes ](img/media/image7.png)
+
+
+
+Comme on peut le voir en se servant d\'OSRM ou de Google Maps, il existe une très grande varité d\'itinéraire possible qui aboutisse approximativement à la même distance de 1.6 km et 22 minutes. L\'explication réside dans le fait qu\'il est impossible de se déplacer en ligne droite selon un tracé euclidien et que l\'on est obligé de parcourir une distance fixe dans le sens horizontal et une autre distance fixe dans le sens vertical. Mais comme il existe un grand nombre de rue Nord-Sud et Est-Ouest on est libre de choisir celles que l\'on veut. La formule de la distance s\'écrit alors :
+
+$D_{ij}=\lvert{X_i-X_j}\rvert+\lvert{Y_i-Y_j}\rvert$
+
+Dans l\'exemple de Cotonou il faut effectuer un trajet de 1100 m dans le sens Ouest-Est et de 500 m dans le sens Sud-Nord, ce qui aboutit à un total de 1600 m quel que soit l\'itinéraire adopté. La seule exception est l\'itinéraire n°4 qui est un peu plus long car le plan en damier de la ville y est légèrement déformé par une place.
+
+La distance rectilinéaire possède une propriété géographique remarquable : le point le plus accessible (M = point médian) pour un ensemble de n points de coordonnées $\left( X_{1},Y_{1} \right)\ldots\left( X_{n},Y_{n} \right)$ est celui dont les coordonnées sont définies par :
+$$
+M\left\{
+  \begin{array}{ll}
+    X_m = mediane(X) \\
+    Y_m = mediane(Y)
+  \end{array}
+  \right.
+$$
+[Exercice ]{.underline}: Soit 7 personnes localisées à Cotonou par les points noirs. Démontrez que le point de rencontre le plus **accessible** qui minimise la distance parcourue par l\'ensemble des personnes est l\'Hotel Kolb (point rouge). Indiquez ensuite par un point bleu la localisation du point le plus **équitable** qui est celui où la personne la plus éloignée aura la distance la plus faible à parcourir.
+
+![Exercice : trouvez le point le plus accessible](img/media/image8.png)
+
+**Remarque importante** : La métrique rectilinéaire n\'est applicable valablement que dans le cas où le réseau de transport est bien orienté dans les deux directions verticales et horizontales après projection. Si ce n\'est pas le cas, il faut procéder à une **rotation** des coordonnées. Ainsi, dans le cas de Cotonou, certains quartiers ont des rues orientées dans les directions NO-SE et NE-SO, de sorte qu\'on ne peut pas y effectuer de calculs de distance rectilinéaire tant que l\'on n\'a pas fait pivoter la carte de 45° environ.
+
+
+#### ![Orientation de la distance rectilinéaire](img/media/image9.png)
+
+
+#### B.1.4 Propriétés des métriques
+
+Les trois distances théoriques vues précédemment sont des **métriques**
+qui respectent les trois propriétés suivantes :
+
+1.  $D_{ii} = 0$: la distance d'un point à lui-même est nulle
+
+2.  $D_{ij} = D_{ji}$: la distance est symétrique et est la même dans
+    les deux directions
+
+3.  $D_{ij} + D_{jk} \geqslant D_{ik}$: inégalité triangulaire
+
+On peut montrer néanmoins facilement que ces conditions ne sont pas toujours vérifiées
+
+1\. *Les distances entre les habitants d\'une même région (ou d\'une même ville) ne sont jamais nulles*. Lorsqu\'on crée une matrice de distance entre régions en se servant des centroïdes ou des chef-lieu, on ne devrait pas mettre « 0 » sur la diagonale mais une valeur correspondant à la distance moyenne entre deux points situés à l\'intérieur de la région. On utilise parfois la formule suivante  ou la distance interne à une zone est égale à la racine carrée de sa surface divisée par deux
+
+[Exemple ]{.underline}: le district autonome de Yamoussoukro a une superficie de 2075 km2. On peut donc estimer la distance moyenne entre ses habitants à  22.8 km
+
+2\. *Les distances réelles ne sont pas toujours symétriques* car le nombre de kilomètre, le temps ou le coût peuvent être plus fort dans un sens que dans l\'autre. C\'est typiquement le cas lorsqu\'il y a un sens unique
+
+[Exemple ]{.underline}: Dans le graphe ci-dessous on suppose que les flèches indiquent le tracé des rues à sens unique et les chiffres le nombre de minutes nécessaire pour aller d\'un point à un autre.
+
+![](img/media/image10.png)
+
+\- le temps nécessaire pour se rendre de C à A est il le même que pour se rendre de A à C ?
+
+3\. *L\'inégalité triangulaire n\'est pas toujours respectée* notamment lorsque l\'on est en présence d\'un réseau de transport inégalitaire et hiérarchisé où il faut passer par un centre. Il arrive alors fréquemment que l\'inégalité triangulaire soit respectée pour les distances kilométriques mais pas pour les distances.
+
+![](img/media/image11.png)
+
+[Exemple ]{.underline}: Les distance routières entre les villes de Côte d\'Ivoire de Béomia (i) , Bouaké (j) et Katiola (k) respectent l\'inégalité routière en kilomètre. On fera en effet moins de kilomètres si on prend la route la plus directe entre les deux villes de Béomia et Katiola qui passe par Botro.
+
+Mais si on raisonne en temps, il apparaît beaucoup plus avantageux de passer par Bouaké pour se rendre de Béomia à Katiola et dans ce cas l\'inégalité triangulaire n\'est plus respectée.
+
+### B.2 Les outils de calcul des distances
+
+Trois solutions au moins existent pour calculer des distances empiriques en kilomètre, temps où coût :
+
+1.  **Les serveurs webs** : Google Map, Via Michelin, Open Street Map
+
+2.  **Les SIG **: après chargement d'un réseau, on peut calculer les   distances entre les points à l'aide de modules adaptés.
+
+3.  **Des packages R ** qui vont utiliser des API pour fournir des  matrices de distances, notamment le package osrm
+
+## C. Les mesures d'accessibilité
+
+Une fois résolu le problème de calcul de la **distance entre deux points**, on va essayer de créer **une ou plusieurs matrice de distance** entre un ensemble de lieux ce qui permettra d'aborder la question de l'accessibilité (quel lieu est le plus proche de tous les autres ? le plus éloigné ?) mais aussi celle des inégalités (quels lieux sont bien reliés ou mal reliés aux autres ?).
+
+### C.1 Matrices de distance 
+
+Une matrice de distance est un tableau qui indique pour chaque couple de lieu *(i,j)* une mesure *Dij* d'éloignement. La matrice peut-être :
+
+\- *Carrée* : si les lieux d'origines *1..i..n* correspondent aux lieux de *destination 1..j..n*. La matrice sera alors de dimension n x n. Ainsi, la matrice de distance entre les 14 districts de Côte d'Ivoire comprendra 14 x 14 = 196 éléments.
+
+![](img/media/image12.png)
+
+\- *Rectangulaire *: si les lieux d'origines 1..i..n sont différents des lieux de destination 1..j..p. Ainsi la distance entre 14 districts de Côte d'Ivoire et les 201 communes du pays comportera 14 x 201 = 2814 observations
+
+Dans l\'exemple qui va suivre, nous allons construire trois matrices de distances différentes entre les chef-lieux des 14 districts de Côte d\'Ivoire.
+
+#### Distance euclidienne (Eij)
+
+Cette distance suppose que le déplacement puisse s\'effectuer en ligne droite sans aucun obstacle. Elle correspondrait par exemple au trajet d\'un drone (en l\'absence de vent).
+
+Distance à vol d\'oiseau entre chefs-lieux de districts de Côte d'Ivoire (en km)
+
+  --------------------------------------------------------------------------------------------------
+  Eij            Abe   Abi   Bon   Bou   Dab   Dal   Dim   Gag   Kor   Man   Odi   San   Ség   Yam
+  -------------- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+  Abengourou     0     168   163   202   186   327   134   280   383   453   543   415   376   195
+
+  Abidjan        168   0     331   287   40    320   166   233   493   453   607   300   415   215
+
+  Bondoukou      163   331   0     250   349   423   260   408   349   528   548   562   426   304
+
+  Bouaké         202   287   250   0     275   180   122   201   206   277   342   373   181   102
+
+  Dabou          186   40    349   275   0     288   153   197   481   420   583   262   388   192
+
+  Daloa          327   320   423   180   288   0     195   99    302   134   317   237   123   132
+
+  Dimbokro       134   166   260   122   153   195   0     150   328   324   446   303   261   64
+
+  Gagnoa         280   233   408   201   197   99    150   0     372   225   414   172   218   107
+
+  Korhogo        383   493   349   206   481   302   328   372   0     311   212   536   202   298
+
+  Man            453   453   528   277   420   134   324   225   311   0     234   310   115   261
+
+  Odienné        543   607   548   342   583   317   446   414   212   234   0     537   197   392
+
+  San-Pédro      415   300   562   373   262   237   303   172   536   310   537   0     357   276
+
+  Séguéla        376   415   426   181   388   123   261   218   202   115   197   357   0     202
+
+  Yamoussoukro   195   215   304   102   192   132   64    107   298   261   392   276   202   0
+  --------------------------------------------------------------------------------------------------
+
+#### Distance routière (Rij)
+
+Le calcul de la distance routière entre deux villes est compliqué par le fait qu\'il existe toujours plusieurs itinéraires. On choisit donc un critère pour retenir un itinéraire de référence. Ici, on choisit l\'itinéraire routier le plus court en temps selon OSRM, sachant que celui-ci ne tient compte ni de la congestion ;, ni des « corps habillés », etc. ..
+
+Distance routière entre chefs-lieux de districts de Côte d'Ivoire (en km)
+
+  --------------------------------------------------------------------------------------------------
+  Rij            Abe   Abi   Bon   Bou   Dab   Dal   Dim   Gag   Kor   Man   Odi   San   Ség   Yam
+  -------------- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+  Abengourou     0     205   196   291   235   385   162   324   506   571   738   522   510   242
+
+  Abidjan        205   0     398   346   49    378   236   272   562   564   794   336   502   234
+
+  Bondoukou      196   398   0     400   428   579   356   517   521   765   753   716   591   435
+
+  Bouaké         291   346   400   0     330   246   192   244   223   432   454   473   197   112
+
+  Dabou          235   49    428   330   0     361   220   238   546   548   777   288   486   218
+
+  Daloa          385   378   579   246   361   0     224   137   462   188   450   266   129   144
+
+  Dimbokro       162   236   356   192   220   224   0     163   409   410   640   391   349   81
+
+  Gagnoa         324   272   517   244   238   137   163   0     461   275   536   231   264   135
+
+  Korhogo        506   562   521   223   546   462   409   461   0     497   233   689   294   329
+
+  Man            571   564   765   432   548   188   410   275   497   0     264   404   136   330
+
+  Odienné        738   794   753   454   777   450   640   536   233   264   0     666   244   560
+
+  San-Pédro      522   336   716   473   288   266   391   231   689   404   666   0     394   363
+
+  Séguéla        510   502   591   197   486   129   349   264   294   136   244   394   0     269
+
+  Yamoussoukro   242   234   435   112   218   144   81    135   329   330   560   363   269   0
+  --------------------------------------------------------------------------------------------------
+
+**Source : calculs effectués avec Osrm**
+
+#### Temps routier minimal (Tij)
+
+Le calcul du temps routier minimal est mesuré ici en minute et a été calculé comme dans le cas précédent par OSRM
+
+Temps routier entre chefs-lieux de districts de Côte d'Ivoire (en minutes)
+
+  --------------------------------------------------------------------------------------------------
+  Tij            Abe   Abi   Bon   Bou   Dab   Dal   Dim   Gag   Kor   Man   Odi   San   Ség   Yam
+  -------------- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+  Abengourou     0     194   192   298   222   346   160   312   461   505   674   487   460   227
+
+  Abidjan        194   0     381   257   50    286   177   236   420   445   634   316   400   167
+
+  Bondoukou      192   381   0     411   409   533   348   499   536   692   750   675   636   415
+
+  Bouaké         298   257   411   0     265   203   160   223   189   362   403   427   252   92
+
+  Dabou          222   50    409   265   0     294   185   241   429   453   642   268   409   176
+
+  Daloa          346   286   533   203   294   0     189   140   366   163   404   244   122   121
+
+  Dimbokro       160   177   348   160   185   189   0     155   324   348   537   359   304   71
+
+  Gagnoa         312   236   499   223   241   140   155   0     386   270   510   211   258   135
+
+  Korhogo        461   420   536   189   429   366   324   386   0     463   216   590   358   255
+
+  Man            505   445   692   362   453   163   348   270   463   0     247   374   194   280
+
+  Odienné        674   634   750   403   642   404   537   510   216   247   0     614   303   468
+
+  San-Pédro      487   316   675   427   268   244   359   211   590   374   614   0     362   340
+
+  Séguéla        460   400   636   252   409   122   304   258   358   194   303   362   0     235
+
+  Yamoussoukro   227   167   415   92    176   121   71    135   255   280   468   340   235   0
+  --------------------------------------------------------------------------------------------------
+
+**Source : calculs effectués avec Osrm**
+
+### C.2 Les indices d'accessibilité 
+
+On peut effectuer plusieurs types de résumé d'une matrice de distance en fonctions des objectifs théoriques ou pratiques. Plusieurs indices sont possibles qui définissent différentes formes d'accessibilité.
+
+#### **Distance moyenne**  (critère d\'efficacité)
+
+On peut la calculer soit pour l'ensemble de la matrice, soit pour les lignes, soit pour les colonnes (si elles sont différentes des lignes). Le point qui est le plus proche de tous les autres est le *point médian.* Il correspond à la localisation la plus efficace et on l'utilisera typiquement pour localiser un entrepôt ou un commerce. Sa formule mathématique de calcul est :
+
+Accessibilité moyenne des chefs-lieux de Côte d'Ivoire
+
+  ------------------------------------------------------------------------
+                   Km à vol d'oiseau  Km par la route  Temps par la route
+  ---------------- ------------------ ---------------- -------------------
+  Abengourou       273                349              323
+
+  Abidjan          288                349              283
+
+  Bondoukou        350                475              462
+
+  Bouaké           214                282              252
+
+  Dabou            272                338              288
+
+  Daloa            220                282              243
+
+  Dimbokro         208                274              236
+
+  Gagnoa           220                271              255
+
+  Korhogo          320                410              355
+
+  Man              289                385              342
+
+  Odienné          384                508              456
+
+  San-Pédro        331                410              375
+
+  Séguéla          247                312              306
+
+  Yamoussoukro     196                247              212
+  ------------------------------------------------------------------------
+
+
+Exemple : Dans le cas de la Côte d\'Ivoire, on peut vérifier que le
+district le plus accessible par la route (en temps ou en kilomètre) est
+celui de **Yamoussoukro** qui se trouve en moyenne à 196 km à vol
+d\'oiseau, 247 kilomètres et 560 minutes par la route à l\'ensemble des
+districts. Par comparaison, la capitale économique Abidjan est nettement
+moins accessible avec une distance moyenne de 288 km à vol d\'oiseau,
+349 km et 738 mn par la route pour rejoindre l\'ensemble des districts.
+Il faut toutefois noter que ce calcul ne tient pas compte des
+populations concernées et on trouverait des résultats différents si
+l\'on avait pondéré les calculs par la population des districts.
+
+#### Distance moyenne pondérée 
+
+Dans le cas de la distance moyenne, il est possible de pondérer les
+calculs en fonction du nombre de personnes localisées au lieu d'origine
+ou au lieu de destination. Le point le plus accessible pourra alors
+changer et se déplacer vers les lieux où il y a le plus d'habitant. Ceci
+rejoint des éléments de cours sur les semis de points dans lequel on a
+vu la différence entre point moyen et point médian pondérés ou on
+pondérés. La formule de calcul de l\'accessibilité moyenne pondérée est
+la suivante :
+
+#### **Distance maximum**  (critère d\'équité)
+
+On utilise cette distance pour la recherche des localisations les plus
+équitables, c'est-à-dire celles où le plus défavorisé est le moins
+défavorisé possible. On l'utilisera par exemple pour localiser une
+caserne de pompier qui doivent intervenir le plus vite possible pour
+éteindre un feu
+
+Eloignement maximal des districts de Côte d\'Ivoire
+
+  ------------------------------------------------------------------------
+                   Km à vol d'oiseau  Km par la route  Temps par la route
+  ---------------- ------------------ ---------------- -------------------
+  Abengourou       543                738              672
+
+  Abidjan          607                795              632
+
+  Bondoukou        562                765              749
+
+  Bouaké           373                474              425
+
+  Dabou            583                778              640
+
+  Daloa            423                579              532
+
+  Dimbokro         446                641              535
+
+  Gagnoa           414                536              509
+
+  Korhogo          536                690              588
+
+  Man              528                765              691
+
+  Odienné          607                795              749
+
+  San-Pédro        562                716              673
+
+  Séguéla          426                591              635
+
+  Yamoussoukro     392                561              467
+  ------------------------------------------------------------------------
+
+[Exemple :]{.underline} Dans le cas de la Côte d\'Ivoire, c\'est le
+district de **Bouaké** qui apparaît le plus *équitable* car son
+éloignement maximal à un autre district est de 373 km à vol d\'oiseau,
+473 kilomètres et 427 minutes par la route ce qui est la plus faible
+valeur observée dans le tableau. Yamoussoukro est certes plus accessible
+en moyenne, mais son éloignement maximal à un autre district est de 392
+km à vol d\'oiseau, 560 km et 468 mn par la route ce qui est plus que
+Bouaké. Le choix de Bouaké est donc le choix le plus équitable, celui où
+« le plus défavorisé est le moins défavorisé possible ».
+
+### C.3 Les indices d'efficacité 
+
+Pour mesurer l'efficacité d'un réseau de transport, on peut construire
+des indices qui combinent entre elles plusieurs mesures de distance. On
+se limitera ici au cas de l\'efficacité du réseau routier que l\'on peut
+évaluer à l\'aide de nos trois matrices de distances.
+
+#### Indice de sinuosité
+
+Cet indice mesure le rapport entre la distance empirique réellement
+parcourue par le véhicule sur le réseau routier et la distance théorique
+à vol d'oiseau.
+
+La valeur 1 correspondant à une route parfaitement droite. En général on
+trouve des valeurs comprises entre 1.1 et 1.5, ce qui signifie que
+l'itinéraire réel est de 10 à 50 % plus long que l'itinéraire direct en
+ligne droite. Dans des cas exceptionnels, l'indice peut dépasser 2 ce
+qui signifie que la route la plus courte en temps fait un grand détour
+par rapport à la distance à vol d\'oiseau pour relier les deux lieux.
+
+**Indice de sinuosité des itinéraires routiers les plus rapides reliant
+les districts de Côte d\'Ivoire**
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Rij / Eij       Abe          Abi          Bon          Bou          Dab          Dal          Dim          Gag          Kor          Man          Odi          San          Ség          Yam
+  --------------- ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------
+  Abengourou      NA           1.22         1.20         1.44         1.27         1.18         1.21         1.15         1.32         1.26         1.36         1.26         1.36         1.24
+
+  Abidjan         1.22         NA           1.21         1.21         1.24         1.18         1.42         1.17         1.14         1.24         1.31         1.12         1.21         1.09
+
+  Bondoukou       1.20         1.21         NA           1.60         1.23         1.37         1.37         1.27         1.49         1.45         1.37         1.27         1.39         1.43
+
+  Bouaké          1.44         1.21         1.60         NA           1.20         1.37         1.58         1.22         1.08         1.56         1.33         1.27         1.09         1.11
+
+  Dabou           1.27         1.24         1.23         1.20         NA           1.26         1.44         1.21         1.14         1.30         1.34         1.10         1.25         1.14
+
+  Daloa           1.18         1.18         1.37         1.37         1.26         NA           1.15         1.38         1.54         1.40         1.42         1.12         1.05         1.09
+
+  Dimbokro        1.21         1.42         1.37         1.58         1.44         1.15         NA           1.09         1.25         1.26         1.44         1.29         1.33         1.27
+
+  Gagnoa          1.15         1.17         1.27         1.22         1.21         1.38         1.09         NA           1.24         1.22         1.29         1.34         1.21         1.26
+
+  Korhogo         1.32         1.14         1.49         1.08         1.14         1.54         1.25         1.24         NA           1.60         1.10         1.29         1.46         1.11
+
+  Man             1.26         1.24         1.45         1.56         1.30         1.40         1.26         1.22         1.60         NA           1.13         1.30         1.19         1.27
+
+  Odienné         1.36         1.31         1.37         1.33         1.34         1.42         1.44         1.29         1.10         1.13         NA           1.24         1.24         1.43
+
+  San-Pédro       1.26         1.12         1.27         1.27         1.10         1.12         1.29         1.34         1.29         1.30         1.24         NA           1.10         1.32
+
+  Séguéla         1.36         1.21         1.39         1.09         1.25         1.05         1.33         1.21         1.46         1.19         1.24         1.10         NA           1.33
+
+  Yamoussoukro    1.24         1.09         1.43         1.11         1.14         1.09         1.27         1.26         1.11         1.27         1.43         1.32         1.33         NA
+
+  ***moyenne***   ***1.27***   ***1.21***   ***1.36***   ***1.31***   ***1.24***   ***1.27***   ***1.32***   ***1.23***   ***1.29***   ***1.32***   ***1.31***   ***1.23***   ***1.25***   ***1.24***
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+[Exemple ]{.underline}: Dans le cas de la Côte d\'Ivoire, la plupart des
+valeurs sont comprises entre 1.1 et 1.5 ce qui signifie qu\'il existe
+des routes relativement droite permettant de relier les villes entre
+elles. Dans les cas les plus favorable, on trouve une route pratiquement
+droite, par exemple entre *Abidjan* et *Yamoussoukro* où le tracé de
+l\'autoroute est pratiquement une droite (indice de sinuosité = 1.09).
+Mais dans d\'autres parties du pays, il n\'existe pas de route droite ou
+du moins pas de route performante ce qui force les automobilistes à
+faire de longs détours pour prendre le chemin le plus rapide. C\'est par
+exemple le cas entre *Bondoukou* et *Bouaké* où, selon OSRM,
+l\'itinéraire le plus rapide est 60 % plus long que la ligne droite
+(indice de sinuosité =1.60).
+
+Abidjan-Yamoussoukro (1.09) Bondoukou-Bouaké (1,60)
+
+![](img/media/image13.png)
+
+#### Indice de vitesse sur route
+
+Cet indice mesure la vitesse moyenne du véhicule le long de l'itinéraire
+correspondant au plus court chemin en temps.
+
+C'est donc un résumé des vitesses ressentie par le conducteur du
+véhicule au cours de son déplacement. Si par exemple on fait 50 km à 100
+km/h (pendant 30 mn) et 50km à 50km/h (pendant 60 mn) on aura fait au
+total 100 km en 90 mn ce qui donnera une vitesse moyenne de 100/(90/60)
+= 67 km/h.
+
+**Indice de vitesse sur route des itinéraires reliant les chefs lieux de district de Côte d\'Ivoire**
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Tij/Rij         Abe          Abi          Bon          Bou          Dab          Dal          Dim          Gag          Kor          Man          Odi          San          Ség          Yam
+  --------------- ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------------
+  Abengourou      NA           63.4         61.4         58.7         63.8         66.9         60.8         62.4         66.2         67.9         65.8         64.4         66.5         63.9
+
+  Abidjan         63.4         NA           62.8         81.2         57.6         79.2         80.0         69.0         80.7         76.0         75.4         63.8         75.3         83.9
+
+  Bondoukou       61.4         62.8         NA           58.5         63.0         65.2         61.5         62.3         58.4         66.4         60.3         63.8         55.9         63.1
+
+  Bouaké          58.7         81.2         58.5         NA           75.2         73.4         72.8         66.4         70.8         72.0         67.8         66.9         46.9         74.9
+
+  Dabou           63.8         57.6         63.0         75.2         NA           73.9         71.5         59.4         77.0         72.6         73.0         64.6         71.5         74.8
+
+  Daloa           66.9         79.2         65.2         73.4         73.9         NA           71.1         58.8         76.3         69.3         67.1         65.8         63.8         71.7
+
+  Dimbokro        60.8         80.0         61.5         72.8         71.5         71.1         NA           63.0         76.4         70.7         71.9         65.5         69.0         68.7
+
+  Gagnoa          62.4         69.0         62.3         66.4         59.4         58.8         63.0         NA           72.1         61.2         63.3         65.9         61.6         59.8
+
+  Korhogo         66.2         80.7         58.4         70.8         77.0         76.3         76.4         72.1         NA           64.6         64.6         70.5         49.5         78.1
+
+  Man             67.9         76.0         66.4         72.0         72.6         69.3         70.7         61.2         64.6         NA           64.4         65.1         42.2         70.9
+
+  Odienné         65.8         75.4         60.3         67.8         73.0         67.1         71.9         63.3         64.6         64.4         NA           65.3         48.4         72.2
+
+  San-Pédro       64.4         63.8         63.8         66.9         64.6         65.8         65.5         65.9         70.5         65.1         65.3         NA           65.5         64.3
+
+  Séguéla         66.5         75.3         55.9         46.9         71.5         63.8         69.0         61.6         49.5         42.2         48.4         65.5         NA           68.7
+
+  Yamoussoukro    63.9         83.9         63.1         74.9         74.8         71.7         68.7         59.8         78.1         70.9         72.2         64.3         68.7         NA
+
+  ***moyenne***   ***64.0***   ***72.9***   ***61.7***   ***68.1***   ***69.1***   ***69.4***   ***69.5***   ***63.5***   ***69.6***   ***66.4***   ***66.1***   ***65.5***   ***60.4***   ***70.4***
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+[Exemple ]{.underline}: Dans le cas de la Côte d\'Ivoire, les vitesses
+sur route sont variables selon les itinéraires en raison des fortes
+différences d\'équipement des tronçons routiers. Les meilleures
+performances s\'observent logiquement entre les villes reliées par
+l\'autoroute comme *Abidjan* et *Yamoussoukro* (84 km/h) ou bien situées
+sur une voie bien équipée car située sur un axe international. A
+l\'inverse, les chefs-lieux des départements périphériques reliés par
+des tronçons routiers de faible niveau peuvent afficher des vitesses
+jusqu\'à deux fois plus faibles, comme entre *Man* et *Séguéla* (42
+km/h). La plupart des itinéraires ont une vitesse de criculation
+comprise entre 60 et 75 km/h. Il faut tout de même rappeler qu\'il
+s\'agit ici de calculs en grande partie théoriques réalisés par OSRM en
+ne tenant compe que de la qualité des routes (revêtement, nombre de
+voies) mais pas de leur encombrement ni dela présence éventuelle de
+barrages ou d\'accidents\...
+
+#### Indice synthétique de performance
+
+Cet indice combine les deux critères précédents en un seul pour repérer
+les itinéraires qui sont à la fois les plus directs possibles sur le
+plan spatial (faible indice de sinuosité) et les plus rapides (forte
+vitesse sur route).
+
+Une route à faible performance peut être améliorée de deux façons
+différentes : soit en augmentant la vitesse de circulation (ajout de
+voies, amélioration du revêtement), soit en réduisant les détours en
+créant un nouveau tronçon plus direct (ajout de ponts, de tunnels,
+etc.).
+
+**Indice synthétique de performance du réseau routier en Côte
+d\'Ivoire**
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Tij/Eij        Abe        Abi        Bon        Bou        Dab        Dal        Dim        Gag        Kor        Man        Odi        San        Ség        Yam
+  -------------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+  Abengourou     NA         51.9       51.3       40.7       50.4       56.8       50.2       54.0       50.1       53.9       48.5       51.1       49.1       51.6
+
+  Abidjan        51.9       NA         52.1       67.3       46.4       67.1       56.3       58.9       70.6       61.1       57.6       56.9       62.2       76.9
+
+  Bondoukou      51.3       52.1       NA         36.6       51.3       47.7       45.0       49.1       39.1       45.8       43.9       50.1       40.3       44.1
+
+  Bouaké         40.7       67.3       36.6       NA         62.5       53.5       46.0       54.4       65.6       46.1       51.0       52.6       43.2       67.2
+
+  Dabou          50.4       46.4       51.3       62.5       NA         58.8       49.7       49.1       67.7       55.7       54.7       58.6       57.1       65.9
+
+  Daloa          56.8       67.1       47.7       53.5       58.8       NA         61.8       42.6       49.6       49.4       47.2       58.5       61.0       65.6
+
+  Dimbokro       50.2       56.3       45.0       46.0       49.7       61.8       NA         58.1       61.2       55.9       50.1       50.7       51.7       54.2
+
+  Gagnoa         54.0       58.9       49.1       54.4       49.1       42.6       58.1       NA         58.1       50.2       48.9       49.1       50.9       47.7
+
+  Korhogo        50.1       70.6       39.1       65.6       67.7       49.6       61.2       58.1       NA         40.4       58.8       54.7       34.0       70.5
+
+  Man            53.9       61.1       45.8       46.1       55.7       49.4       55.9       50.2       40.4       NA         56.9       49.9       35.5       55.9
+
+  Odienné        48.5       57.6       43.9       51.0       54.7       47.2       50.1       48.9       58.8       56.9       NA         52.6       39.2       50.5
+
+  San-Pédro      51.1       56.9       50.1       52.6       58.6       58.5       50.7       49.1       54.7       49.9       52.6       NA         59.4       48.9
+
+  Séguéla        49.1       62.2       40.3       43.2       57.1       61.0       51.7       50.9       34.0       35.5       39.2       59.4       NA         51.6
+
+  Yamoussoukro   51.6       76.9       44.1       67.2       65.9       65.6       54.2       47.7       70.5       55.9       50.5       48.9       51.6       NA
+
+  **moyenne**    **50.5**   **60.1**   **45.5**   **51.9**   **55.7**   **54.7**   **52.8**   **51.4**   **54.0**   **50.2**   **50.6**   **53.1**   **48.4**   **56.9**
+  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+[Exemple ]{.underline}: Dans le cas de la Côte d\'Ivoire, le tableau
+final nous permet tout d\'abord de repérer les **liaisons** les mieux
+équipées (*Yamoussoukro-Abidjan *: 76.9) et les moins bien équipées
+(*Korhogo-Séguéla *: 34.0). Mais il permet également, en calculant les
+valeurs moyennes de l\'indice pour chaque colonne, de repérer les
+**districts** les mieux équipés ou les moins bien équipés. On voit ainsi
+arriver en tête les deux capitales *Abidjan* (60.1) et *Yamoussoukro*
+(56.9), suivies de *Dabou* (55.7) et *Daloa* (54.7). Les districts les
+moins bien équipés sont *Séguéla* (48.4), *Man* (50.2), *Abengourou*
+(50.5) et *Odienné* (50.6).
+
+Ces indicateurs sont donc intéressants dans une perspective
+d\'**aménagement du territoire** car ils permettent d\'évaluer assez
+facilement les inégalités territoriales en matière d\'accessibilité.
+
+### C.4 Cartes en isochrones
+
+L'API *osrm* et le package R qui permet de l'utiliser permettent de construire des cartes en isochrone. On peut alors comparer pour un lieu donnée les lieux accessibles par la route soit en un certain  nombre de kilomètres, soit en un certain temps. Si le réseau de transport était homogène et isotrope, ces cartes formeraient des cercles concentriques. Mais ce n'est pas forcément le cas, soit parce qu'il n'existe pas de routes (déformation des distances kilométriques), soit parce que les routes rapides sont concentrées sur certains tronçons du réseau
+
+
+#### Exemple de Bouaké
+
+On commence par repérer les coordonnées les plus exactes possibles du
+marché de Bouaké en se servant par exemple de Google Maps. Puis on va
+utiliser soit la fonction `osrmIsochrone()`, soit la fonction
+`osrmIsodistance()` du package **osrm**pour générer des polygones
+correspondant aux points situés respectivement à une même distance en
+temps ou une même distance en kilomètres par la route.
+
+On peut maintenant tracer deux cartes d'isolignes, l'une correspondant
+aux temps et l'autre aux distances :
+
+![](img/media/image17.png)
+
+-   **Commentaire** : La zone accessible en mois de 240 km recouvre
+    l'essentiel de la partie centrale du pays et affiche une forme
+    globalement circulaire en raison de la situation de carrefour de
+    Bouaké. Mais la zone accessible en mois de 4 h est davantage allongé
+    dans le sens Nord-Sud en raison de la présence d'autoroutes ou de
+    voies rapides sur l'axe Abidjan-Yamoussoukro-Korhogo. Evidemment ces
+    calculs théoriques ne tiennent pas compte des barrages et des "corps
+    habillés" ...
+
+#### Exemple d'Abidjan
+
+A titre de comparaison, on refait le même exercice pour Abidjan en
+prenant comme point de départ le Plateau.
+
+![](img/media/image18.png)
+
+-   **Commentaire** : La zone accessible en moins de 240 km se limite au
+    quart sud-ouest du pays et permet d'atteindre Yamoussoukro mais pas
+    Bouaké. Par contre, si on raisonne en distance-temps, la zone
+    accessible en moins de 4h s'élargit fortement en direction du Nord
+    pour atteindre Bouaké grâce à l'autoroute.
+
+#### Exemple d'Odienné
+
+On prend maintenant le cas d'Odienné qui est l'une des villes les plus
+périphériques et les moins bien relié au reste du pays.
+
+![](img/media/image19.png)
+
+-   **Commentaire** : la zone accessible en 240 km ou 4h est assez
+    réduite à l'intérieur de la Côte d'Ivoire. Toutefois, le calcul
+    effectué par OSRM ne se limite pas aux frontières du pays et indique
+    une accessibilité possibles de territoires voisins situés en Guinée
+    ou au Mali.
+
+
+## Bibliographie
+
+ANDIH Randos Firmin Kacou, 2020, Urbanisation de la Côte d'Ivoire :
+Analyse spatialede la dynamiqueurbaine des origines à nos jours, Revue
+Dalogéo, N°2, Juin 2020.
+
+BEGUIN H., 1979, *Méthodes d'analyse géographique quantitative*.
+Librairies techniques.
+
+BAMBA Vakaramoko et KOFFIE-BIKPO Céline Yolande (2018), « Les contraintes liées au transport des produits vivriers au marché de gros de Bouaké (Côte d'Ivoire) », *REGARDSUDS* N°2,ISSN : 2414-4150, pp.132-143.
+
+BAMBA Vakaramoko et KOFFIE-BIKPO Céline Yolande (2019), « Les acteurs du
+transport des produits vivriers au marché de gros de Bouaké (Côte
+d'Ivoire) », *European Scientific Journal*,Vol.15, N°2, ISSN : 1857-7431
+(Online), 1857-7881 (Print), pp.169-183.
+
+BAMBA Vakaramoko (2013), *Transport et approvisionnement du marché de gros de Bouaké*, Mémoire de DEA, Université FHB de Cocody, IGT, 85p.
+
+BAMBA Vakaramoko, 2019, « *Transport et approvisionnement du marché de gros de Bouaké enproduits vivriers* », Thèse unique en géographie, Université FHB de Cocody, IGT, 343p.
+
+BOUQUET C. et DJODO I.K. , « "Déguerpir" pour reconquérir l'espace public à Abidjan. », *L'Espace Politique* \[En ligne\], 22 \| 2014-1, mis en ligne le 17 mars 2014, consulté le 15 janvier 2023. URL : http://journals.openedition.org/espacepolitique/2963 ; DOI :
+<https://doi.org/10.4000/espacepolitique.2963>
+
+DEMBELE, O., 1997, Le modèle d'urbanisme ivoirien face à la crise économique. Observation à propos de l'habitat métropolitain, *in* Contamin B., Memel-Fotê H., *le modèle ivoirien en question*, Paris, Karthala-ORSTOM, p. 483-513.
+
+HAERINGER, P., 1969, « Structures foncières et création urbaine à Abidjan », *Cahiers d'Etudes Africaines,* Vol.9, n°34, p. 219-270.\ DOI : [10.3406/cea.1969.3163](http://dx.doi.org/10.3406/cea.1969.3163)
+
+HAUHOUOT Antoine Asseypo, 2015, Société, état et territoire en Côte d'Ivoire : essai de géographie du développement, L'Harmattan Côte d'Ivoire, 316p.
+
+TAYLOR P. J., 1977, *Quantitative methods in geography: an introduction to spatial analysis*. Houghton Mifflin.
+
+TOBLER W. R., 1970, \"A Computer MovieSimulatingUrbanGrowth in the Detroit Region\", *EconomicGeography*, Vol.46, N°sup1, 234‑240.
+
+YAPI-DIAHOU, A., 1990, « L'Etat et les municipalités en Côte d'Ivoire : un jeu de cache-cache ? », *Politique Africaine, *n° 40, p. 51-59.
+
+
+[^1]: « *Tout est relié à tout, mais ce qui est proche est plus relié
+    que ce qui est éloigné* »

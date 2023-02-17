@@ -1,0 +1,1076 @@
+---
+title: "Application n°1 : Le marché de gros de Bouaké"
+author: "Bamba Vakaramoko  (Univ. Abidjan) & Claude Grasland (Univ. Paris Cité)"
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE)
+```
+
+Nous proposons ici une série d'exercices destinés à comprendre la logique d'approvisionnement du marché de gros de Bouaké en examinant la fréquence et le volume des livraisons selon le produit, la date et la distance.
+
+## A. Préparation des données
+
+### packages
+
+L'exercice sera ici réalisée avec le logiciel R en utilisant quelques packages :
+
+-   `knitr`: package permettant de créer des documents R markdown
+-   `dplyr`: package permettant de simplifier les fonctions de R-base
+-   `ggplot2`: package permettant de faire facilement des graphiques de qualité
+-   `sf`: package permettant de construire des objets géographiques
+-   `mapsf`: package de cartographie thématique
+
+On commence donc par charger les 4 packages dont nous aurons besoin avec la commande `library()`. Si ces commandes ne fonctionnent pas, il faudra au préalable installer ces packages avec le menu "*Tools/Install Packages/ ...*"
+
+```{r}
+library(knitr)
+library(dplyr, quietly = TRUE,warn.conflicts = F)
+library(sf, quietly = TRUE,warn.conflicts = F)
+library(mapsf, quietly = TRUE,warn.conflicts = F)
+library(ggplot2, quietly = TRUE,warn.conflicts = F)
+library(reshape2)
+```
+
+### Données statistiques
+
+On charge le fichier des données d'enquêtes sur le marché de Bouaké
+
+```{r}
+don <- readRDS(file = "MAR-BOUAKE-2014/MAR-BOUAKE-2014-data.RDS")
+kable(head(don), caption="Extrait du fichier")
+```
+
+Le tableau comporte 1918 lignes correspondant aux bulletins de taxes prélevées à l'entrée du marché de gros de Bouaké. Chaque entrée de marchandise est décrite par 19 variables :
+
+-   **code** : identifiant\
+-   **mouvt** : entrée ou sortie de marchandise\
+-   **mois** : date mesurée en mois\
+-   **prod** : type de marchandise
+-   **poids** : poids en kg\
+-   **mod** : moyen de transport\
+-   **immat** : immatriculation du véhicule\
+-   **droit** : montant fixe de la taxe
+-   **cfakg** : taxe par kg
+-   **ori** : lieu d'origine\
+-   **lon_ori** : longitude du lieu d'origine\
+-   **lat_ori** : latitude du lieu d'origine\
+-   **dis_km_ori** : distance routière au lieu d'origine en km
+-   **dis_mn_ori** : distance routière au lieu d'origine en minutes
+-   **des** : lieu de destination
+-   **lon_des** : longitude du lieu de destination\
+-   **lat_des** : latitude du lieu de destination\
+-   **dis_km_des** : distance routière au lieu de destination en km
+-   **dis_mn_des** : distance routière au lieu de destination en minutes
+
+**Sources :** le tableau de donnée est issu d'une collecte effectuée par Bamba Vakaramoko dans le cadre de son doctorat de géographie. Les variables relatives à la latitude et la longitude des lieux de destination ont été ajoutées ultérieurement et ont permis d'estimer les distances routières en kilomètres et en minutes à l'aide de l'application osrm.
+
+### Données spatiales
+
+Pour visualiser certains résultats nous serons amenés à produire des cartes pour lesquelles nous aurons besoin :
+
+-   d'un fonds de carte des lieux d'origine ou de destination
+-   d'un fonds de carte des départements de Côte d'Ivoire
+
+On charge ces deux fonds de carte qui sont des fichiers **sf** stockés au format interne de R (.RDS) et que l'on ouvre avec la fonction `readRDS()`. On les projette ensuite pour avoir une échelle de distance en kilomètres à l'aide de la fonction `st_transform()` :
+
+```{r}
+maploc <- readRDS("MAR-BOUAKE-2014/MAR-BOUAKE-2014-map.RDS")
+maploc<-st_transform(maploc,crs = 2043)
+
+mapdep <- readRDS("MAR-BOUAKE-2014/CIV1_map.RDS")
+mapdep<-st_transform(mapdep,crs = 2043)
+```
+
+On procède à une visualisation rapide des deux fonds de carte en utilisant la fonction `mf_map()` du package **mapsf** :
+
+```{r}
+
+mf_init(mapdep,
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="lightyellow",
+       border="gray",
+       add=T)
+mf_map(maploc,
+      type="base",
+     pch=20,
+     col="red",
+     cex=0.6,
+     add=T)
+mf_layout(title = "Zone d'étude",
+          credits = "EE CIST 2023",
+            )
+
+```
+
+## B. Statistique exploratoire
+
+On va procéder à une série d'analyse statistiques exploratoires simples pour mieux comprendre le contenu de chacun des variables contenues dans la base de données. Ceci va nous amener à recoder et simplifier un certain nombre de variables en réduisant leur nombre de modalités.
+
+### Mouvements d'entrée et de sortie
+
+la variable `mouvt` possède deux modalités selon que les marchandises arrivent au marché pour y être vendues où qu'elles en sortent pour être exportées vers un pays étranger.
+
+```{r}
+tabmouvt <- don %>% group_by(mouvt) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic)
+kable(tabmouvt, 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des mouvements d'entrée et sortie du marché de Bouaké")
+```
+
+-   **Commentaire :** l'essentiel des mouvements correspond à des entrées (1779 soit 92.8%) et on ne trouve qu'un petit nombre de sorties (139 soit 7.2%) correspondant pour l'essentiel à des transits et des opérations de douanes pour les exportations internationales. Les sorties correspondent cependant à des véhicules dont le tonnage est beaucoup plus important (25.5 tonnes / véhicule contre 7.3 tonnes /véhicule pour les entrées) et totalisent 21.3% des tonnages qui passent par le marché.
+
+### Dates de relevé
+
+L'enquête a été réalisée sur une période de plusieus mois mais avec des niveaux d'exhaustivité plus ou moins importants.
+
+```{r}
+tabmois <- don %>% group_by(mois) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic)
+kable(tabmois, 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des dates de relevés des entrées et sorties au marché de Bouaké")
+```
+
+-   **Commentaire :** la collecte des données démarre principalement en Juillet 2014 mais s'interrompt en Août 2014 avant de reprendre de façon continue de Septembre 2014 à Janvier 2015. Si on excepte les deux premières dates (avril et juin 2014) pour lesquels l'effectif de relevé est trop faible, on constate que les tonnages moyen des véhicules qui passent par le marché oscillent entre 6 et 11 tonnes.
+
+### Produits (détaillé)
+
+Les types de production notés à l'entrée ou à la sortie du marché comportent 45 catégories différentes. On peut mesurer le poids de chacune de ces catégories en nombre de mouvements ou en kg.
+
+```{r}
+tabprod <- don %>% group_by(prod) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic)
+kable(tabprod, 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau détaillé des produits échangés à Bouaké")
+
+```
+
+-   **Commentaire** : Comme on peut le voir, certaines productions occupent une part très importantes des transports et des tonnages avec en premier lieu les arachides décortiquées (23.4% des véhicules et 10.4% des tonnages) ou le maïs grain (18.3% des véhicules et 17% des tonnages). D'autres productions sont également importantes comme le riz ou les ignames, mais leur poids est moins visible car il est dispersé en de multiples catégories.
+
+On peut essayer de procéder à un recodage de la variable pour mieux résumer les produits en 5 grandes catégories.
+
+```{r}
+# correction
+don$prod[don$prod=="beté bété"]<-"bété bété"
+
+## Recodage de pro5 en prod5
+prod5 <- as.character(don$prod)
+prod5[prod5 == "ail"] <- "divers"
+prod5[prod5 == "arachide decortiquée"] <- "arachide"
+prod5[prod5 == "assawa"] <- "igname"
+prod5[prod5 == "attiéké sec"] <- "divers"
+prod5[prod5 == "aubergine longue"] <- "divers"
+prod5[prod5 == "banane plantain"] <- "divers"
+#prod5[prod5 == "beté bété"] <- "igname"
+prod5[prod5 == "bété bété"] <- "igname"
+prod5[prod5 == "citron vert"] <- "divers"
+prod5[prod5 == "coco frais"] <- "divers"
+prod5[prod5 == "courges"] <- "divers"
+prod5[prod5 == "courgette"] <- "divers"
+prod5[prod5 == "florido"] <- "igname"
+prod5[prod5 == "gombo frais"] <- "divers"
+prod5[prod5 == "gombo sec"] <- "divers"
+prod5[prod5 == "haricot sec"] <- "divers"
+prod5[prod5 == "kléglé"] <- "igname"
+prod5[prod5 == "koudjan"] <- "igname"
+prod5[prod5 == "kpassadjo"] <- "igname"
+prod5[prod5 == "kponan"] <- "igname"
+prod5[prod5 == "mais grain"] <- "mais"
+prod5[prod5 == "manioc frais"] <- "divers"
+prod5[prod5 == "mil"] <- "divers"
+prod5[prod5 == "oignons"] <- "divers"
+prod5[prod5 == "orange"] <- "divers"
+prod5[prod5 == "piment sec"] <- "divers"
+prod5[prod5 == "poivre"] <- "divers"
+prod5[prod5 == "poivron"] <- "divers"
+prod5[prod5 == "riz blanchi"] <- "riz"
+prod5[prod5 == "riz blanchi bké 189"] <- "riz"
+prod5[prod5 == "riz blanchi iguapé"] <- "riz"
+prod5[prod5 == "riz blanchi importé"] <- "riz"
+prod5[prod5 == "riz local bké 189"] <- "riz"
+prod5[prod5 == "riz local blanchi bké 189"] <- "riz"
+prod5[prod5 == "riz paddy"] <- "riz"
+prod5[prod5 == "riz paddy bké 189"] <- "riz"
+prod5[prod5 == "riz paddy iguapé"] <- "riz"
+prod5[prod5 == "riz pady iguapé"] <- "riz"
+prod5[prod5 == "soja"] <- "divers"
+prod5[prod5 == "sorgho"] <- "divers"
+prod5[prod5 == "tomate sodefel"] <- "divers"
+prod5[prod5 == "trela"] <- "igname"
+prod5[prod5 == "wakrou"] <- "igname"
+
+don$prod5<-as.factor(prod5)
+```
+
+On peut désormais aboutir à un tableau plus simple :
+
+```{r}
+tabprod <- don %>% group_by(prod5) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic)
+kable(tabprod, 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau simplifié des produits échangés à Bouaké")
+
+```
+
+-   **Commentaire** : On voit désormais beaucoup mieux que les ignames, précédemment subdivisés en une dizaine de variétés sont le produit le plus important puisqu'ils représentent 34.1% des mouvements et 40.7% des tonnages. Quand au riz sous ses diverses formes il totalise 10.1% des mouvements et 8.7% des tonnages. Lorsqu'on effectue le rapport du nombre de tonnes sur le nombre de véhicules pour chaque marchandise, on constate que certains produits sont apportés par gros tonnages (ex.les ignames avec en moyenne 10.3 tonnes/ véhicules) alors que d'autres arrivent par plus petites quantités (ex. les arachides avec en moyenne 3.8 tonnes / véhicule)
+
+### Modes de transport
+
+On devine à la lumière de ce qui précède que les différents produits ne vont pas utiliser les mêmes modes de transport, certains arrivant par camions, d'autres par camionnettes et d'autres enfin par triporteur. On va donc examiner successivement la part globale de chaque mode de transport puis examiner les variations en fonction du type de produit.
+
+```{r}
+tabmode <- don %>% group_by(mod) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic)
+kable(tabmode, 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau détaillé des moyens de transport vers le marché  Bouaké")
+
+```
+
+-   **Commentaire** : Le tableau montre bien le rapport inverse entre le nombre de véhicule et le tonnage transporté. Les gros camions ne représentent que 12.7% des mouvements mais apportent 39.2% des tonnages avec une moyenne de 26.7 tonnes/véhicule. A l'inverse, les voitures de transport représentent 29.3% des mouvements mais seulement 5.0% des tonnages avec une moyenne de 1.5 tonnes par véhicule.
+
+Pour rendre le tableau plus simple, on procède à un recodage permettant de se ramener à 4 catégories en fusionnant les moto à 3 roues avec les voiture et les remorques ou 10 essieues avec les gros camions
+
+```{r}
+## Recodage de mod en mod4
+mod4 <- as.character(don$mod)
+mod4[mod4 == "moto 3 roues"] <- "1 moto"
+mod4[mod4 == "voiture de transport"] <- "2.voiture"
+mod4[mod4 == "pick-up"] <- "3.pick-up"
+mod4[mod4 == "camion"] <- "4.camion"
+mod4[mod4 == "camion"] <- "4.camion"
+mod4[mod4 == "10 roues"] <- "5.gros camion"
+mod4[mod4 == "gros camion"] <- "5.gros camion"
+mod4[mod4 == "remorque"] <- "5.gros camion"
+
+don$mod4<-mod4
+```
+
+```{r}
+tabmode <- don %>% group_by(mod4) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic)
+kable(tabmode, 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau simplifié des moyens de transport vers le marché  Bouaké")
+
+```
+
+### Immatriculations
+
+Le relevé des plaques d'immatriculation ne préjuge pas forcément de la destination du véhicule mais il peut apporter quelques informations sur son origine.
+
+```{r}
+tabimmat <- don %>% group_by(immat) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic)
+kable(tabimmat, 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau détaillé des immatriculations au marché  Bouaké")
+
+```
+
+-   **Commentaire** : 96.7% des véhicules qui passent par le marché de Bouaké sont immatriculés en Côte d'Ivoire pour environ 88.2% du tonnage. Les véhicules immatriculés dans les autres pays sont beaucoup moins nombreux mais concernent en général des tonnages plus importants. L'effectif le plus important concerne le Mali (md) avec 2.7% des véhicules et 9.2% des tonnages suivi par le Burkina Faso et le Niger.
+
+### Taxes prélevées
+
+La taxe prélevée sur les marchandises comporte une partie fixe dépendant du type de véhicule et une partie variable dépendant du poids des marchandises et fixée en général à 2 CFA/kg. On peut donc reconstituer les taxes prélevées en effectuant le calcul suivant :
+
+${taxe}_{cfa} = {droit}_{cfa} + ({prix}_{cfa/kg} . {poids}_{kg})$
+
+```{r}
+don$taxe<-don$droit+(don$poids*don$cfakg)
+```
+
+On peut résumer le montant des prélèvements effectués à l'aide de paramètres statistiques généraux et d'un histogramme :
+
+```{r}
+summary(don$taxe)
+hist(don$taxe, 
+     breaks = quantile(don$taxe,seq(0,1,0.05)),
+     xlim = c(0,50000),
+     col="lightyellow",
+     border="gray",
+     lwd=0.1,
+     main = "Distribution des taxes au marché de Bouaké",
+     sub = "Source : Bamba Vakarmoko, EE CIST 2023",
+     xlab = "Taxe par véhicule ( en CFA)",
+     ylab = "Densité de proba.",
+     cex.axis=0.7,
+     cex.lab = 1,
+     cex.sub=0.7,
+     cex.main = 1.2
+     )
+#lines(density(don$taxe,bw = 1000,from = c(0,50000)),
+#      col="red",
+#      lwd=0.6)
+```
+
+-   **Commentaire** : le montant des taxes prélevées varie de 0 à 142920 CFA. Sa valeur moyenne est de 16159 CFA et sa média est de 6390 CFA. L'examen de l'histogramme montre deux pics de concentration : un mode principal correspondant aux voitures et pick-up qui payent des taxes de 2000 à 500 CFA et un mode secondaire correspondant aux camions qui payent des taxes de 10 000 à 15 000 CFA.
+
+### Lieux d'origine
+
+En ne considérant que les marchandises entrantes on peut repérer les origines les plus fréquentes des marchandises en nombre de véhicules ou en tonnes
+
+```{r}
+tabori <- don %>% filter(mouvt=="entrée") %>%
+                   group_by(ori) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) %>%
+                   arrange(-pct_vehic)
+kable(head(tabori,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux d'origine (en nb. de véhicules)")
+
+tabori<-tabori %>% arrange(-pct_tonnes)
+kable(head(tabori,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux d'origine (en tonnes)")
+```
+
+-   **Commentaire** : le classement des lieux d'origine est différent selon que l'on raisonne en nombre de véhicules ou en tonnes de marchandises transportées. Dans le premier cas, les lieux les plus fréquent sont des localités proches de Bouaké (*Tieningboué, Dabakala, Bouandougou, ...*) d'où proviennent beaucoup de marchandises dans des véhicules à relativement faible capacité. Dans le second cas on voit apparaître des lieux plus éloignés (\*Abidjan, Kohogo, Mali, ...\*\*) qui sont reliés par des moyens de transport à beaucoup plus grande capacité.
+
+On réalise une cartographie selon chacun des deux critères (nb. de véhicules ou nb. de tonnes) pour bien voir la différence. Pour cela on commence par effectuer une jointure entre le fonds de carte et le tableau des origines :
+
+```{r}
+mapdon <-merge(maploc,tabori,by.x="loc",by.y="ori")
+```
+
+Puis on fait les deux cartes :
+
+```{r}
+
+par(mfrow=c(1,2))
+# En nb de véhicule
+mf_init(mapdep,expandBB = c(0,0,0.1,0),
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="gray80",
+       border="white",
+       add=T)
+mf_map(mapdon,
+      type="prop",
+      var="pct_vehic",
+      leg_pos = "topright",
+      col="lightyellow",
+      border = "gray60",
+      leg_title = "%",
+      inches = 0.1)
+mf_label(mapdon[mapdon$pct_vehic>2,],
+         var ="loc",
+         cex = 0.5, 
+         col="black",
+         overlap = F)
+mf_layout(title = "Origines / Véhicule",
+          credits = "EE CIST 2023",
+            )
+# En tonnes
+mf_init(mapdep,expandBB = c(0,0,0.1,0),
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="gray80",
+       border="white",
+       add=T)
+mf_map(mapdon,
+      type="prop",
+      var="pct_tonnes",
+      leg_pos = "topright",
+      col="lightyellow",
+      border = "gray60",
+      leg_title = "%",
+      inches = 0.1)
+mf_label(mapdon[mapdon$pct_tonnes>2,],
+         var ="loc",
+         cex = 0.5, 
+         col="black",
+         overlap = F)
+mf_layout(title = "Origines / Tonnes",
+          credits = "EE CIST 2023",
+            )
+
+```
+
+### Lieux de destination
+
+En ne considérant que les marchandises sortantes on peut repérer de la même façon les lieux d'exportations soumis à droits de douane
+
+```{r}
+tabdes <- don %>% filter(mouvt=="sortie") %>%
+                   group_by(des) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) %>%
+                   arrange(-pct_vehic)
+kable(head(tabdes,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux de destination (en nb. de véhicules)")
+
+tabdes<-tabdes %>% arrange(-pct_tonnes)
+kable(head(tabdes,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux de destination (en tonnes)")
+```
+
+-   **Commentaire** : Les bulletins de sortie du marché de Bouaké correspondent surtout à des opérations de douanes pour des marchandises destinées principalement au Mali ou à l'exportation via les ports d'Abidjan et de San Pédro. Il est donc inutile de procéder à leur cartographie.
+
+## C. Analyse de l'effet de la distance
+
+On se propose maintenant d'étudier la relation entre la nature du produit qui arrive au marché de Bouaké et la distance parcouru ainsi que le moyen de transport utilisé. On va utiliser 5 classes de distance :
+
+-   < 50 km
+
+-   50-100 km
+
+-   100-200 km
+
+-   200-250 km
+
+-    > 250 km
+
+### Entrées en fonction de la distance kilométrique
+
+```{r}
+don$dis<-cut(don$dis_km_ori, breaks = c(0,50,100,150,200, 2000)) 
+levels(don$dis)<-c("< 50","50-100","100-150", "150-200","> 200")
+tabdes <- don %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                   group_by(dis) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+kable(head(tabdes,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Entrées par classes de distance kilométrique")
+
+```
+
+-   **Commentaire** : Plus on s'éloigne de Bouaké, plus on emploie des véhicules à forte capacité de transport. Ainsi, dans les 50 premiers km on trouve 26.4% des véhicules mais seulement 12.5% des tonnages car la charge moyenne n'est que de 3.4 tonnes par véhicule. En revanche au delà de 200 km on ne trouve plus que 12.2% des véhicules mais qui totalisent 28.7% du tonnage car ils ont une charge moyenne de 17 tonnes / véhicule. On peut vérifier ce résultat en croisant directement les types de véhicule et la distance.
+
+### Entrées en fonction de la distance et du mode de transport
+
+On réalise deux graphiques croisant le mode de transport et la distance à Bouaké, l'un en nombre de véhicules et l'autre en nombre de tonnes.
+
+```{r}
+don$dis<-cut(don$dis_km_ori, breaks = c(0,50,100,150,200, 2000)) 
+levels(don$dis)<-c("< 50","50-100","100-150", "150-200","> 200")
+tabdes <- don %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                    filter(dis !=0) %>%
+                   group_by(dis,mod4) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+
+tab<-dcast(tabdes,formula = mod4~dis,value.var = "nb_vehic",)
+kable(tab, caption = "Mode de transport et distance à Bouaké (nb. véhicules)", digits =1)
+
+
+ggplot(tabdes, aes(x=dis,y=pct_vehic,fill=mod4)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("% des véhicules")+
+  ggtitle("Mode de transport et distance à Bouaké (nb. véhicules)",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+
+tab<-dcast(tabdes,formula = mod4~dis,value.var = "nb_tonnes",)
+kable(tab, caption = "Mode de transport et distance à Bouaké (nb. tonnes)", digits =1)
+
+ggplot(tabdes, aes(x=dis,y=pct_tonnes,fill=mod4)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("% des tonnes")+
+  ggtitle("Mode de transport et distance à Bouaké (nb. tonnes)",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+```
+
+-   **Commentaire** : On voit bien que plus la distance augmente, plus la part de marchandises transportées par camion augmente et plus celle des voitures ou pick-up diminue. Ce résultat permet de montrer la relation très forte et très significative qui unit distance et mode de transport.
+
+### Type de produit et distance à Bouaké
+
+Nous allons maintenant examiner s'il existe une variation des produits en fonction de la distance à Bouaké, comme le prévoit le modème de Von Thünen. Nous nous servirons pour cela du regroupement des produits en cinq catégories effectué précédemment.
+
+```{r}
+don$dis<-cut(don$dis_km_ori, breaks = c(0,50,100,150,200, 2000)) 
+levels(don$dis)<-c("< 50","50-100","100-150", "150-200","> 200")
+tabdes <- don %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                  filter(dis !=0) %>%
+                   group_by(dis,prod5) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+
+tab<-dcast(tabdes,formula = prod5~dis,value.var = "nb_vehic",)
+kable(tab, caption = "Type de produit et distance à Bouaké (nb. véhicules)", digits =1)
+
+
+ggplot(tabdes, aes(x=dis,y=pct_vehic,fill=prod5)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("% des véhicules")+
+  ggtitle("Type de produit et distance à Bouaké (nb. véhicules)",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+
+tab<-dcast(tabdes,formula = prod5~dis,value.var = "nb_tonnes",)
+kable(tab, caption = "Type de produit et distance à Bouaké (nb. tonnes)", digits =1)
+
+ggplot(tabdes, aes(x=dis,y=pct_tonnes,fill=prod5)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("% des tonnes")+
+  ggtitle("Type de produit et distance à Bouaké (nb. tonnes)",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+```
+
+## D. Analyse par produits 
+
+### Igname
+
+```{r}
+sel<-don %>% filter(prod5 =="igname")
+myprod<-"igname"
+```
+
+#### Diversité 
+
+```{r}
+tabdiv<- sel %>% group_by(prod) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+kable(tabdiv,caption = "Diversité des types d'ignames vendus à Bouaké",digit=1)
+```
+
+#### Origines
+
+```{r}
+tabori <- sel %>% filter(mouvt=="entrée") %>%
+                   group_by(ori) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) %>%
+                   arrange(-pct_vehic)
+
+tabori<-tabori %>% arrange(-pct_tonnes)
+kable(head(tabori,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux d'origine des ignames")
+```
+
+```{r}
+
+mapdon <-merge(maploc,tabori,by.x="loc",by.y="ori")
+         
+         
+mf_init(mapdep,expandBB = c(0,0,0.1,0),
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="gray80",
+       border="white",
+       add=T)
+mf_map(mapdon,
+      type="prop",
+      var="nb_tonnes",
+      leg_pos = "topright",
+      col="lightyellow",
+      border = "gray60",
+      leg_title = "tonnes",
+      inches = 0.1)
+mf_label(mapdon[mapdon$pct_tonnes>2,],
+         var ="loc",
+         cex = 0.5, 
+         col="black",
+         overlap = F)
+mf_layout(title = "Origine des ignames",
+          credits = "EE CIST 2023",
+            )
+
+```
+
+#### Modes de transport
+
+```{r}
+
+tabdes <- sel %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                    filter(dis !=0) %>%
+                   group_by(dis,mod4) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+
+
+
+tab<-dcast(tabdes,formula = mod4~dis,value.var = "nb_tonnes",)
+kable(tab, caption = "Mode de transport des ignames", digits =1)
+
+ggplot(tabdes, aes(x=dis,y=nb_tonnes,fill=mod4)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("nb tonnes")+
+  ggtitle("Mode de transport des ignames",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+```
+
+
+
+
+
+
+### Riz
+
+```{r}
+sel<-don %>% filter(prod5 =="riz")
+```
+
+#### Diversité 
+
+```{r}
+tabdiv<- sel %>% group_by(prod) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+kable(tabdiv,caption = "Diversité des types de riz vendus à Bouaké",digit=1)
+```
+
+#### Origines
+
+```{r}
+tabori <- sel %>% filter(mouvt=="entrée") %>%
+                   group_by(ori) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) %>%
+                   arrange(-pct_vehic)
+
+tabori<-tabori %>% arrange(-pct_tonnes)
+kable(head(tabori,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux d'origine du riz")
+```
+
+```{r}
+
+mapdon <-merge(maploc,tabori,by.x="loc",by.y="ori")
+         
+         
+mf_init(mapdep,expandBB = c(0,0,0.1,0),
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="gray80",
+       border="white",
+       add=T)
+mf_map(mapdon,
+      type="prop",
+      var="nb_tonnes",
+      leg_pos = "topright",
+      col="lightyellow",
+      border = "gray60",
+      leg_title = "tonnes",
+      inches = 0.1)
+mf_label(mapdon[mapdon$pct_tonnes>2,],
+         var ="loc",
+         cex = 0.5, 
+         col="black",
+         overlap = F)
+mf_layout(title = "Origine du riz",
+          credits = "EE CIST 2023",
+            )
+
+```
+
+#### Modes de transport
+
+```{r}
+
+tabdes <- sel %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                    filter(dis !=0) %>%
+                   group_by(dis,mod4) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+
+
+
+tab<-dcast(tabdes,formula = mod4~dis,value.var = "nb_tonnes",)
+kable(tab, caption = "Mode de transport du riz", digits =1)
+
+ggplot(tabdes, aes(x=dis,y=nb_tonnes,fill=mod4)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("nb tonnes")+
+  ggtitle("Mode de transport des ignames",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+```
+
+
+
+
+### Maïs
+
+
+```{r}
+sel<-don %>% filter(prod %in% c("mais grain"))
+```
+
+#### Diversité 
+
+```{r}
+tabdiv<- sel %>% group_by(prod) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+kable(tabdiv,caption = "Maïs vendus à Bouaké",digit=1)
+```
+
+#### Origines
+
+```{r}
+tabori <- sel %>% filter(mouvt=="entrée") %>%
+                   group_by(ori) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) %>%
+                   arrange(-pct_vehic)
+
+tabori<-tabori %>% arrange(-pct_tonnes)
+kable(head(tabori,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux d'origine du Maïs")
+```
+
+```{r}
+
+mapdon <-merge(maploc,tabori,by.x="loc",by.y="ori")
+         
+         
+mf_init(mapdep,expandBB = c(0,0,0.1,0),
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="gray80",
+       border="white",
+       add=T)
+mf_map(mapdon,
+      type="prop",
+      var="nb_tonnes",
+      leg_pos = "topright",
+      col="lightyellow",
+      border = "gray60",
+      leg_title = "tonnes",
+      inches = 0.1)
+mf_label(mapdon[mapdon$pct_tonnes>2,],
+         var ="loc",
+         cex = 0.5, 
+         col="black",
+         overlap = F)
+mf_layout(title = "Origine du Maïs",
+          credits = "EE CIST 2023",
+            )
+
+```
+
+#### Modes de transport
+
+```{r}
+
+tabdes <- sel %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                    filter(dis !=0) %>%
+                   group_by(dis,mod4) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+
+
+
+tab<-dcast(tabdes,formula = mod4~dis,value.var = "nb_tonnes",)
+kable(tab, caption = "Mode de transport du Maïs", digits =1)
+
+ggplot(tabdes, aes(x=dis,y=nb_tonnes,fill=mod4)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("nb tonnes")+
+  ggtitle("Mode de transport du Maïs",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+```
+
+
+
+
+### Arachide décortiquée
+
+
+```{r}
+sel<-don %>% filter(prod %in% c("arachide decortiquée","arachide décortiquée"))
+```
+
+#### Diversité 
+
+```{r}
+tabdiv<- sel %>% group_by(prod) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+kable(tabdiv,caption = "Diversité des types d'arachide vendus à Bouaké",digit=1)
+```
+
+#### Origines
+
+```{r}
+tabori <- sel %>% filter(mouvt=="entrée") %>%
+                   group_by(ori) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) %>%
+                   arrange(-pct_vehic)
+
+tabori<-tabori %>% arrange(-pct_tonnes)
+kable(head(tabori,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux d'origine des arachides")
+```
+
+```{r}
+
+mapdon <-merge(maploc,tabori,by.x="loc",by.y="ori")
+         
+         
+mf_init(mapdep,expandBB = c(0,0,0.1,0),
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="gray80",
+       border="white",
+       add=T)
+mf_map(mapdon,
+      type="prop",
+      var="nb_tonnes",
+      leg_pos = "topright",
+      col="lightyellow",
+      border = "gray60",
+      leg_title = "tonnes",
+      inches = 0.1)
+mf_label(mapdon[mapdon$pct_tonnes>2,],
+         var ="loc",
+         cex = 0.5, 
+         col="black",
+         overlap = F)
+mf_layout(title = "Origine des arachides",
+          credits = "EE CIST 2023",
+            )
+
+```
+
+#### Modes de transport
+
+```{r}
+
+tabdes <- sel %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                    filter(dis !=0) %>%
+                   group_by(dis,mod4) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+
+
+
+tab<-dcast(tabdes,formula = mod4~dis,value.var = "nb_tonnes",)
+kable(tab, caption = "Mode de transport des arachides", digits =1)
+
+ggplot(tabdes, aes(x=dis,y=nb_tonnes,fill=mod4)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("nb tonnes")+
+  ggtitle("Mode de transport des arachides",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+```
+
+
+
+
+### Oignons
+
+
+```{r}
+sel<-don %>% filter(prod %in% c("oignons"))
+```
+
+#### Diversité 
+
+```{r}
+tabdiv<- sel %>% group_by(prod) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+kable(tabdiv,caption = "Diversité des types d'oignons vendus à Bouaké",digit=1)
+```
+
+#### Origines
+
+```{r}
+tabori <- sel %>% filter(mouvt=="entrée") %>%
+                   group_by(ori) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) %>%
+                   arrange(-pct_vehic)
+
+tabori<-tabori %>% arrange(-pct_tonnes)
+kable(head(tabori,10), 
+      digits=c(0,0,0,2,2,1),
+      caption = "Tableau des 10 premiers lieux d'origine des oignons")
+```
+
+```{r}
+
+mapdon <-merge(maploc,tabori,by.x="loc",by.y="ori")
+         
+         
+mf_init(mapdep,expandBB = c(0,0,0.1,0),
+        theme="agolalight")
+mf_map(mapdep,
+      type="base",
+       col="gray80",
+       border="white",
+       add=T)
+mf_map(mapdon,
+      type="prop",
+      var="nb_tonnes",
+      leg_pos = "topright",
+      col="lightyellow",
+      border = "gray60",
+      leg_title = "tonnes",
+      inches = 0.1)
+mf_label(mapdon[mapdon$pct_tonnes>2,],
+         var ="loc",
+         cex = 0.5, 
+         col="black",
+         overlap = F)
+mf_layout(title = "Origine des oignons",
+          credits = "EE CIST 2023",
+            )
+
+```
+
+#### Modes de transport
+
+```{r}
+
+tabdes <- sel %>% filter(mouvt=="entrée") %>%
+                  filter(is.na(dis)==F) %>%
+                    filter(dis !=0) %>%
+                   group_by(dis,mod4) %>%
+                   summarise(nb_vehic = n(),
+                             nb_tonnes = sum(poids)/1000) %>%
+                   mutate(pct_vehic = 100*nb_vehic/sum(nb_vehic),
+                          pct_tonnes = 100*nb_tonnes/sum(nb_tonnes),
+                          tonnes_vehic = nb_tonnes/nb_vehic) 
+
+
+
+tab<-dcast(tabdes,formula = mod4~dis,value.var = "nb_tonnes",)
+kable(tab, caption = "Mode de transport des oignons", digits =1)
+
+ggplot(tabdes, aes(x=dis,y=nb_tonnes,fill=mod4)) + 
+  geom_bar(stat ="identity") +
+  scale_x_discrete("Distance routière en km")+
+  scale_y_continuous("nb tonnes")+
+  ggtitle("Mode de transport des oignons",
+          subtitle = "Source : EE CIST 2023, Bamba Vakaramoko")+
+  theme_light()
+
+```

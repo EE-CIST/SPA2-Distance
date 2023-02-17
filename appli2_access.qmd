@@ -1,0 +1,1596 @@
+---
+title: "Application n°2 : Matrices de distances et accessibilité "
+author: "Bamba Vakaramoko  (Univ. Abidjan) & Claude Grasland (Univ. Paris Cité)"
+---
+
+Nous proposons ici de montrer pas à pas les étapes d'analyse d'une matrice d'accessibilité. L'exemple porte sur la côte d'Ivoire (cf. cours) mais peut être appliqué ensuite à tous les autres pays de l'espace d'étude
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, error = FALSE)
+
+# packages utilitaires
+library(knitr)
+library(dplyr)
+library(reshape2)
+
+# packages cartographiques
+library(sf)
+library(mapsf)
+library(RColorBrewer)
+#library(leaflet)
+
+# packages de calcul des distances
+
+# Installer la version de développement 
+#library(remotes)
+#remotes::install_github('riatelab/osrm')
+library(osrm)
+```
+
+## A. EXEMPLE DE COURS
+
+Nous allons charger un fonds de carte des unités administratives de niveau 1 issu de gadm et enrichi par une variable de population ainsi que le nom et les coordonnées des chefs-lieux.
+
+### 1. Préparation des données
+
+
+#### 1.1 Fonds de carte
+
+On charge un fichier **sf** (*spatial features*) contenant pour chaque unité spatiale les variables suivantes :
+
+- *code* : code de l'unité spatiale
+- *nom* : nom de l'unité spatiale
+- *ctr* : nom du chef-lieu de l'unité spatiale
+- *ctr_lon* : longitude du chef-lieu
+- *ctr_lat* : latitude du chef-lieu
+
+
+```{r}
+
+code <- "CIV"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+         mutate(code = substr(code,4,5))
+```
+
+#### 1.2 Création du fonds de carte des centres
+
+Si l'on ne dispose pas des données sur les chef-lieux, on peut calculer le centre géométrique des polygones mais avec le risque de tomber sur un point non significatif.
+
+```{r, eval=FALSE}
+map_ctr<-st_centroid(map)
+```
+
+Il est préférable de choisir des points représentatifs en se servant des coordonnées du chef-lieu
+
+```{r}
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+```
+
+### 2. Calcul des distances à vol d'oiseau
+
+
+Le calcul des distances à vol d'oiseau (à la surface de la Terre) s'effectue très facilement à l'aide de la fonction `st_distance()` du package sf. Il faut juste faire attention à bientransformer le tableau obtenu en matrice avec la fonction `class()` puis à rajouter les noms de lignes et de colonnes.
+
+```{r}
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-substr(map_ctr$code,4,5)
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+```
+
+
+
+
+### 3. Calcul de la route la plus rapide avec `osrmTable()`
+
+La fonction demande les coordonnées de latitue et longitude des lieux pour lesquels on veut calculer les distances routières. On peut les fournir via un tableau (data.frame) ou via un objet de type spatial feature (sf) à condition que ce dernier soit en projection ESPG 4326 (c'est-à-dire non projeté).
+
+On peut alors effectuer le calcul de la matrice de distance routière soit en temps ("duration"), soit en kilomètre ("distance") soit les deux à la fois (solution la plus simple). On récupère une liste qui comporte les deux matrices de distance ainsi que les coordonnées d'origine et de destination des lieux entr lesquels on a calculé les distances. Les temps routiers sont en minutes et les distances routières en mètres.
+
+```{r, echo=TRUE}
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+```
+
+On procède ensuite à l'extraction des résultats sous la forme de matrices que l'on peut exprimer dans une autre unité de mesure (par exemple convertir les mètres en kilomètres). On en profite pour les symétriser car il peut arriver que la distance soit légèrement plus grande dans une des deux directions
+
+#### 3.1 Distance routière en km
+
+```{r}
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map_ctr$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+```
+
+#### 3.2 Distance routière en temps
+
+```{r, echo=TRUE}
+
+
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map_ctr$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+```
+
+### 4. Indices d'accessibilité
+
+On peut résumer chacune de nos trois matrices à l'aide d'indices d'accessibilité.
+
+#### 4.1 Accessibilité moyenne
+
+```{r, echo=TRUE}
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+```
+
+#### 4.2 Eloignement maximal
+
+```{r, echo=TRUE}
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+```
+
+### 5. Indices de performance
+
+Les matrices (quand elles ne sont pas trop grandes) sont des objets assez pratiques pour effectuer des calculs dans R et offrent des possibilités différentes de celles des data.frame. On peut par exemple diviser nos deux matrices l'une par l'autre afin de calculer la vitesse moyenne de circulation entre deux chefs-lieux :
+
+#### 5.1 Indice de sinuosité
+
+```{r}
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+```
+
+#### 5.2 Indice de vitesse sur route
+
+```{r, echo=TRUE}
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+```
+
+#### 5.3 Indice global de performance
+
+```{r}
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+```
+
+### 6. Cartographie des résultats
+
+
+#### 6.1 Jointure
+On rassemble tous les indicateurs dans un tableau et on effectue une jointure avec le fonds de carte.
+
+```{r}
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+```
+
+### 6.2 Accessibilité moyenne en temps
+
+```{r}
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+### 6.3 Efficacité globale du réseau
+
+```{r}
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+
+
+## B. EXERCICES D'APPLICATION
+
+On reprend le programme précédent ey on l'adapte pour analyser un autres pays. On donne ci-dessous les résultats attendus mais sans les programmes.
+
+### Bénin
+
+```{r, echo=FALSE}
+###### 1. Données ########
+# 1.1 chargement du fonds de carte
+code <- "BEN"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+          mutate(code = substr(code,4,5))
+
+# 1.2. Création du fichier des centres
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+
+####### 2. Distance à vol d'oiseau ######
+
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-map$code
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+
+####### 3. Distance de plus court chemin sur route ######
+
+# 3.1 Calcul des plus courts chemins
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+
+# 3.2 Distance sur route (en km)
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+# 3.3 Distance sur route (en mn)
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+
+###### 4. Indices d'accessibilité ########
+
+# 4.1 Distance moyenne
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+# 4.2 Distance maximale 
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+######## 5. Indices de performance #######
+# 5.1 Indice de sinuosité
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+# 5.2 Indice de vitesse sur route
+
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+
+
+# 5.3 Indice de performance globale
+
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+
+
+########## 6. Cartographie des résultats ####
+
+# 6.1 Jointure
+
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+
+
+### 6.2 Accessibilité moyenne en temps
+
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+
+
+### 6.3 Efficacité globale du réseau
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+### Burkina-Faso
+
+```{r, echo=FALSE}
+###### 1. Données ########
+# 1.1 chargement du fonds de carte
+code <- "BFA"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+          mutate(code = substr(code,4,5))
+
+# 1.2. Création du fichier des centres
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+
+####### 2. Distance à vol d'oiseau ######
+
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-map$code
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+
+####### 3. Distance de plus court chemin sur route ######
+
+# 3.1 Calcul des plus courts chemins
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+
+# 3.2 Distance sur route (en km)
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+# 3.3 Distance sur route (en mn)
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+
+###### 4. Indices d'accessibilité ########
+
+# 4.1 Distance moyenne
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+# 4.2 Distance maximale 
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+######## 5. Indices de performance #######
+# 5.1 Indice de sinuosité
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+# 5.2 Indice de vitesse sur route
+
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+
+
+# 5.3 Indice de performance globale
+
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+
+
+########## 6. Cartographie des résultats ####
+
+# 6.1 Jointure
+
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+
+
+### 6.2 Accessibilité moyenne en temps
+
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+
+
+### 6.3 Efficacité globale du réseau
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+
+
+### Mali
+
+```{r, echo=FALSE}
+###### 1. Données ########
+# 1.1 chargement du fonds de carte
+code <- "MLI"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+          mutate(code = substr(code,4,5))
+
+# 1.2. Création du fichier des centres
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+
+####### 2. Distance à vol d'oiseau ######
+
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-map$code
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+
+####### 3. Distance de plus court chemin sur route ######
+
+# 3.1 Calcul des plus courts chemins
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+
+# 3.2 Distance sur route (en km)
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+# 3.3 Distance sur route (en mn)
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+
+###### 4. Indices d'accessibilité ########
+
+# 4.1 Distance moyenne
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+# 4.2 Distance maximale 
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+######## 5. Indices de performance #######
+# 5.1 Indice de sinuosité
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+# 5.2 Indice de vitesse sur route
+
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+
+
+# 5.3 Indice de performance globale
+
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+
+
+########## 6. Cartographie des résultats ####
+
+# 6.1 Jointure
+
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+
+
+### 6.2 Accessibilité moyenne en temps
+
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+
+
+### 6.3 Efficacité globale du réseau
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+### Niger
+
+```{r, echo=FALSE}
+###### 1. Données ########
+# 1.1 chargement du fonds de carte
+code <- "NER"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+          mutate(code = substr(code,4,5))
+
+# 1.2. Création du fichier des centres
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+
+####### 2. Distance à vol d'oiseau ######
+
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-map$code
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+
+####### 3. Distance de plus court chemin sur route ######
+
+# 3.1 Calcul des plus courts chemins
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+
+# 3.2 Distance sur route (en km)
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+# 3.3 Distance sur route (en mn)
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+
+###### 4. Indices d'accessibilité ########
+
+# 4.1 Distance moyenne
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+# 4.2 Distance maximale 
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+######## 5. Indices de performance #######
+# 5.1 Indice de sinuosité
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+# 5.2 Indice de vitesse sur route
+
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+
+
+# 5.3 Indice de performance globale
+
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+
+
+########## 6. Cartographie des résultats ####
+
+# 6.1 Jointure
+
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+
+
+### 6.2 Accessibilité moyenne en temps
+
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+
+
+### 6.3 Efficacité globale du réseau
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+
+### Sénégal
+
+```{r, echo=FALSE}
+###### 1. Données ########
+# 1.1 chargement du fonds de carte
+code <- "SEN"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+          mutate(code = substr(code,4,5))
+
+# 1.2. Création du fichier des centres
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+
+####### 2. Distance à vol d'oiseau ######
+
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-map$code
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+
+####### 3. Distance de plus court chemin sur route ######
+
+# 3.1 Calcul des plus courts chemins
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+
+# 3.2 Distance sur route (en km)
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+# 3.3 Distance sur route (en mn)
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+
+###### 4. Indices d'accessibilité ########
+
+# 4.1 Distance moyenne
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+# 4.2 Distance maximale 
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+######## 5. Indices de performance #######
+# 5.1 Indice de sinuosité
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+# 5.2 Indice de vitesse sur route
+
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+
+
+# 5.3 Indice de performance globale
+
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+
+
+########## 6. Cartographie des résultats ####
+
+# 6.1 Jointure
+
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+
+
+### 6.2 Accessibilité moyenne en temps
+
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+
+
+### 6.3 Efficacité globale du réseau
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+### Togo
+
+```{r, echo=FALSE}
+###### 1. Données ########
+# 1.1 chargement du fonds de carte
+code <- "TGO"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+          mutate(code = substr(code,4,5))
+
+# 1.2. Création du fichier des centres
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+
+####### 2. Distance à vol d'oiseau ######
+
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-map$code
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+
+####### 3. Distance de plus court chemin sur route ######
+
+# 3.1 Calcul des plus courts chemins
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+
+# 3.2 Distance sur route (en km)
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+# 3.3 Distance sur route (en mn)
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+
+###### 4. Indices d'accessibilité ########
+
+# 4.1 Distance moyenne
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+# 4.2 Distance maximale 
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+######## 5. Indices de performance #######
+# 5.1 Indice de sinuosité
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+# 5.2 Indice de vitesse sur route
+
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+
+
+# 5.3 Indice de performance globale
+
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+
+
+########## 6. Cartographie des résultats ####
+
+# 6.1 Jointure
+
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+
+
+### 6.2 Accessibilité moyenne en temps
+
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+
+
+### 6.3 Efficacité globale du réseau
+
+map<-st_transform(map,2043)
+map_ctr<-st_transform(map_ctr,2043)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
+
+### France
+
+```{r, echo=FALSE}
+###### 1. Données ########
+# 1.1 chargement du fonds de carte
+code <- "FRA"
+rep<-paste0("GEO/",code,"/")
+ficmap<-paste0(rep,code,"1_map_OK.RDS")
+map<-readRDS(ficmap) %>% 
+          select(code=HASC_1,
+                 nom =NAME_1,
+                 ctr = CTR,
+                 ctr_lon = CTR_LON,
+                 ctr_lat = CTR_LAT) %>%
+          mutate(code = substr(code,4,5))
+
+# ELIMINE LA CORSE !?
+map<-map[-5,]
+
+
+# 1.2. Création du fichier des centres
+map_ctr<-st_drop_geometry(map)
+map_ctr<- st_as_sf(map_ctr, coords = c("ctr_lon","ctr_lat"))
+st_crs(map_ctr)<-4326
+
+####### 2. Distance à vol d'oiseau ######
+
+dist_eu<-as.matrix(st_distance(map_ctr))/1000
+class(dist_eu)<-"matrix"
+row.names(dist_eu)<-map_ctr$nom
+colnames(dist_eu)<-map$code
+kable(dist_eu, digits=0, caption="Distance à vol d'oiseau ")
+
+####### 3. Distance de plus court chemin sur route ######
+
+# 3.1 Calcul des plus courts chemins
+dist <- osrmTable(map_ctr, measure = c("duration", "distance"))
+
+# 3.2 Distance sur route (en km)
+dist_km <- as.matrix(dist$distances)/1000
+dist_km<-(dist_km+t(dist_km))/2
+row.names(dist_km)<-map_ctr$nom
+colnames(dist_km)<-map$code
+kable(dist_km, 
+      caption="Distance routière  (en km)", 
+      digits=0)
+# 3.3 Distance sur route (en mn)
+dist_mn <- as.matrix(dist$durations)
+dist_mn<-(dist_mn+t(dist_mn))/2
+row.names(dist_mn)<-map_ctr$nom
+colnames(dist_mn)<-map$code
+kable(dist_mn, 
+      caption="Temps routier (en minutes)", 
+      digits=0)
+
+###### 4. Indices d'accessibilité ########
+
+# 4.1 Distance moyenne
+dist_eu_mean <- apply(dist_eu,1,mean)
+dist_km_mean <- apply(dist_km, 1,mean)
+dist_mn_mean <- apply(dist_mn, 1,mean)
+tab<-data.frame(dist_eu_mean, dist_km_mean,dist_mn_mean)
+kable(tab, 
+      caption = "Accessibilité moyenne des chefs-lieux ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+# 4.2 Distance maximale 
+dist_eu_max <- apply(dist_eu,1,max)
+dist_km_max <- apply(dist_km, 1,max)
+dist_mn_max <- apply(dist_mn, 1,max)
+tab<-data.frame(dist_eu_max, dist_km_max,dist_mn_max)
+kable(tab, 
+      caption = "Eloignement maximal ",
+      col.names = c("Km à vol d'oiseau", "Km par la route", "Temps par la route"),
+      digits=0)
+
+######## 5. Indices de performance #######
+# 5.1 Indice de sinuosité
+ind1<-dist_km/dist_eu
+diag(ind1)<-NA
+moyenne<-apply(ind1,2,mean,na.rm=T)
+ind1<-rbind(ind1,moyenne)
+kable(ind1, digits=2, caption = "Indice de sinuosité ")
+
+
+# 5.2 Indice de vitesse sur route
+
+dist_ho <- dist_mn / 60
+ind2 <-dist_km / dist_ho
+diag(ind2)<-NA
+moyenne<-apply(ind2,2,mean,na.rm=T)
+ind2<-rbind(ind2,moyenne)
+
+kable(ind2, 
+      caption = "Indice de vitesse sur route (en km/h)", 
+      digits = 1)
+
+
+# 5.3 Indice de performance globale
+
+ind3<-ind2/ind1
+diag(ind3)<-NA
+
+kable(ind3, 
+      caption = "Indice de performance globale (en km à vol d'oiseau/h)", 
+      digits = 1)
+
+
+########## 6. Cartographie des résultats ####
+
+# 6.1 Jointure
+
+map<-map
+map$dis_eu_moy<-apply(dist_eu,1,mean,na.rm=T)
+map$dis_km_moy<-apply(dist_km,1,mean,na.rm=T)
+map$dis_mn_moy<-apply(dist_mn,1,mean,na.rm=T)
+
+map$dis_eu_max<-apply(dist_eu,1,max,na.rm=T)
+map$dis_km_max<-apply(dist_km,1,max,na.rm=T)
+map$dis_mn_max<-apply(dist_mn,1,max,na.rm=T)
+
+map$route_sinuosite<-ind1[row.names(ind1)=="moyenne",]
+map$route_vitesse<-ind2[row.names(ind2)=="moyenne",]
+map$route_performance<-ind3[row.names(ind3)=="moyenne",]
+
+
+
+### 6.2 Accessibilité moyenne en temps
+
+
+map<-st_transform(map,2154)
+map_ctr<-st_transform(map_ctr,2154)
+mypal<-brewer.pal(5,"YlOrRd")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "dis_mn_moy",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 0,
+       leg_title = "en minutes",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Accessibilité moyenne",
+           frame = T,
+           credits = "EECIST 2023")
+
+
+### 6.3 Efficacité globale du réseau
+
+map<-st_transform(map,2154)
+map_ctr<-st_transform(map_ctr,2154)
+mypal<-brewer.pal(5,"RdYlGn")
+
+mf_theme("agolalight")
+mf_map(map,
+       type ="choro",
+       var = "route_performance",
+       pal=mypal,
+       nbreaks = 5,
+       leg_val_rnd = 1,
+       leg_title = "en km/h à vol d'oiseau",
+       leg_val_cex = 0.6,
+       )
+mf_map(map_ctr,
+       type="base",
+       pch=20,
+       cex=1,
+       col="black",
+       add=T)
+mf_label(map,
+         var="code",
+         col="gray50")
+mf_layout (title = "Qualité du réseau routier",
+           frame = T,
+           credits = "EECIST 2023")
+```
