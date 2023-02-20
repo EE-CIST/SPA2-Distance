@@ -16,7 +16,7 @@ website:
     left:
       - cours.qmd
       - appli1_bouake.qmd
-      - qppli2_access.qmd
+      - appli2_access.qmd
 
       
 format:
