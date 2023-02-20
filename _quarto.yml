@@ -5,18 +5,18 @@ project:
 
 render:
       - index.qmd
-      - Cours.qmd
-      - Appli1_bouake.qmd
-      - Appli2_access.qmd
+      - cours.qmd
+      - appli1_bouake.qmd
+      - appli2_access.qmd
 
 
 website:
   title: "Distances et accessibilité"
   navbar:
     left:
-      - Cours.qmd
-      - Appli1_bouake.qmd
-      - Appli2_access.qmd
+      - cours.qmd
+      - appli1_bouake.qmd
+      - qppli2_access.qmd
 
       
 format:
