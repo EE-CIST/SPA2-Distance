@@ -1,0 +1,12 @@
+var;label;source
+code;code unique;Vakaramoko B., 2013
+date;date du relevé;Vakaramoko B., 2013
+prod;produit transporté (détail);Vakaramoko B., 2013
+prod_class;produit transporté (classes);Vakaramoko B., 2013
+poids;poids total (kg);Vakaramoko B., 2013
+mod;mode de transport;Vakaramoko B., 2013
+ori;lieu d'origine;Vakaramoko B., 2013
+dist_km;distance à Bouaké (en km par la route);OSRM & EECIST 2023
+dist_class;classes de distance;OSRM & EECIST 2023
+ori_lon;longitude du lieu d'origine;OSRM & EECIST 2023
+ori_lat;latitude du lieu d'origine;OSRM & EECIST 2023
