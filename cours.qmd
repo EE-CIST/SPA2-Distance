@@ -667,6 +667,20 @@ des indices qui combinent entre elles plusieurs mesures de distance. On
 se limitera ici au cas de l\'efficacité du réseau routier que l\'on peut
 évaluer à l\'aide de nos trois matrices de distances.
 
+
+Les indices peuvent se calculer pour une liaison isolée comme dans les trois exemples ci-dessous :
+
+- Indices de performance de la liaison Bouaké-Bondoukou
+![](img/Exemple1.jpg)
+
+- Indices de performance de la liaison Yamoussoukro-Abidjan
+![](img/Exemple2.jpg)
+
+- Indices de performance de la liaison Seguela-Korhogo
+![](img/Exemple3.jpg)
+
+Mais on peut aussi les calculer pour un lieu d'origine en effectuant la moyenne des performances de l'ensemble de ses liaisons sur les trois critères. 
+
 #### Indice de sinuosité
 
 Cet indice mesure le rapport entre la distance empirique réellement
@@ -730,9 +744,7 @@ exemple le cas entre *Bondoukou* et *Bouaké* où, selon OSRM,
 l\'itinéraire le plus rapide est 60 % plus long que la ligne droite
 (indice de sinuosité =1.60).
 
-Abidjan-Yamoussoukro (1.09) Bondoukou-Bouaké (1,60)
 
-![](img/media/image13.png)
 
 #### Indice de vitesse sur route
 
@@ -796,6 +808,7 @@ s\'agit ici de calculs en grande partie théoriques réalisés par OSRM en
 ne tenant compe que de la qualité des routes (revêtement, nombre de
 voies) mais pas de leur encombrement ni dela présence éventuelle de
 barrages ou d\'accidents\...
+
 
 #### Indice synthétique de performance
 
