@@ -4,8 +4,6 @@ subtitle: "CIST EE2023, Ouidah, Bénin"
 author: "Varamoko Bamba & Claude Grasland"
 ---
 
-
-test
 Ce site est la version **provisoire** du cours d'analyse spatiale sur la distance et l'accessibilité qui sera dispensé lors de l'école d'été CIST 2023 à Ouidah au Bénin. Il a été mis au point par Claude Grasland (Géographe, Université Paris Cité) et Vakaramoko Bamba (Géographe, Université d'Abidjan) puis relu et complété par les autres formateurs. 
 
 Le **cours** présente le concept général de distance à l'aide d'exemples concrets puis décrit différentes mesures d'accessibilité que l'on peut déduire d'unematrice de distance
